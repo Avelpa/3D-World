@@ -7,6 +7,7 @@ package pkg3dforrealthistime;
 
 import MyVector.MyMatrix;
 import MyVector.MyVector;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
@@ -21,16 +22,13 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 
 /**
- *
  * @author Dmitry
  */
 public class Main extends JComponent implements KeyListener, MouseListener, MouseMotionListener{
     
     private JFrame frame;
     
-    private final int WIDTH = 800, HEIGHT = 800;
-    private final double FOV = 360.0 / 360.0;
-    
+    private final int WIDTH = 1200, HEIGHT = 800;
     
     private final int PPM = 100;
     
@@ -40,6 +38,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     double zVel = 0.0, yVel = 0.0;
     
     Camera camera;
+    Camera camera2;
     
     int prevMouseX = -1;
     int prevMouseY = -1;
@@ -59,9 +58,17 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         camera = new Camera(0.017, 90);
         camera.moveTo(10, 0, 0);
         
+        camera2 = new Camera(0.017, 90);
+        camera2.moveTo(10, -20, 2);
+        camera2.rotateHorizontally(-70);
         
-        for (int i = -WIDTH/2/PPM; i <= WIDTH/2/PPM; i ++) {
-            for (int j = -HEIGHT/2/PPM; j <= HEIGHT/2/PPM; j ++) {
+//        points.add(new MyVector(0, -2, 0));
+//        points.add(new MyVector(0, 2, 0));
+//        points.add(new MyVector(0, 0, 2));
+//        points.add(new MyVector(0, 0, -2));
+        
+        for (int i = -WIDTH/8/PPM; i <= WIDTH/8/PPM; i ++) {
+            for (int j = -HEIGHT/8/PPM; j <= HEIGHT/8/PPM; j ++) {
                 for (int h = -2; h <= 2; h ++) {
                     points.add(new MyVector(h, i, j));
                 }
@@ -99,19 +106,69 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     @Override
     public void paintComponent(Graphics g) {
         g.clearRect(0, 0, WIDTH, HEIGHT);
+        g.setColor(new Color(0, 0, 0, 0.1f));
+        g.fillRect(0, 0, WIDTH/2, HEIGHT);
+        g.setColor(Color.DARK_GRAY);
         for (int i = 0; i < points.size(); i ++) {
-            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / ((int)(2 * FOV))) / PPM, (HEIGHT / ((int)(2 * FOV))) / PPM);
+//            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM), (HEIGHT / PPM));
+            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM / 2), (HEIGHT / PPM / 2));
             MyVector scrCoords = toScreenCoords(cameraCoords);
-//            System.out.print("original: " + points.get(i) + " after camera: " + cameraCoords);
-//            System.out.println(" onto screen: " + scrCoords);
-            //MyVector cameraCoords = toScreenCoords(camera.getProjection(points.get(i)));
-            //int[] scrCoords = toScreenCoords(points.get(i));
-            //int[] scrCoordsPrev = toScreenCoords(points.get(i-1));
-            //g.drawLine(scrCoordsPrev[0], scrCoordsPrev[1], scrCoords[0], scrCoords[1]);
-            
-            //g.drawLine(WIDTH/2, HEIGHT/2, scrCoords[0], scrCoords[1]);
-            g.fillOval((int)(scrCoords.x-5), (int)(scrCoords.y-5), 11, 11);
+            g.fillOval((int)(scrCoords.x-5) - WIDTH/4, (int)(scrCoords.y-5), 11, 11);
         }
+        
+        g.setColor(Color.RED);
+        g.drawLine(WIDTH/2, 0, WIDTH/2, HEIGHT);
+
+        g.setColor(Color.WHITE);
+        g.fillRect(WIDTH/2, 0, WIDTH/2, HEIGHT);
+        
+        // points
+        g.setColor(Color.DARK_GRAY);
+        for (int i = 0; i < points.size(); i ++) {
+//            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM), (HEIGHT / PPM));
+            MyVector cameraCoords = camera2.getProjection(points.get(i), (WIDTH / PPM / 2), (HEIGHT / PPM / 2));
+            MyVector scrCoords = toScreenCoords(cameraCoords);
+            g.fillOval((int)(scrCoords.x-5) + WIDTH/4, (int)(scrCoords.y-5), 11, 11);
+        }
+        
+        // camera center
+        g.setColor(Color.MAGENTA);
+        MyVector cameraPos = camera2.getProjection(camera.getPos(), (WIDTH / PPM / 2), (HEIGHT / PPM / 2));
+        cameraPos = toScreenCoords(cameraPos);
+        g.fillOval((int)(cameraPos.x-5) + WIDTH/4, (int)(cameraPos.y-5), 11, 11);
+        // top fov
+        MyVector fovLine = camera2.getProjection(MyMatrix.rotateY(camera.getNormal().mult(1000), camera.getFov() / 2).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
+        fovLine = toScreenCoords(fovLine);
+        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
+        // bottom fov
+        fovLine = camera2.getProjection(MyMatrix.rotateY(camera.getNormal().mult(1000), -camera.getFov() / 2).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
+        fovLine = toScreenCoords(fovLine);
+        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
+        // left fov
+        fovLine = camera2.getProjection(MyMatrix.rotateZ(camera.getNormal().mult(1000), camera.getFov() / 2).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
+        fovLine = toScreenCoords(fovLine);
+        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
+        // right fov
+        fovLine = camera2.getProjection(MyMatrix.rotateZ(camera.getNormal().mult(1000), -camera.getFov() / 2).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
+        fovLine = toScreenCoords(fovLine);
+        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
+        // normal
+        g.setColor(Color.BLUE);
+        fovLine = camera2.getProjection(camera.getNormal().mult(200).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
+        fovLine = toScreenCoords(fovLine);
+        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
+        // x2D
+        g.setColor(Color.GREEN);
+        fovLine = camera2.getProjection(camera.getX2D().mult(200).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
+        fovLine = toScreenCoords(fovLine);
+        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
+        // y2D
+        g.setColor(Color.RED);
+        fovLine = camera2.getProjection(camera.getY2D().mult(200).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
+        fovLine = toScreenCoords(fovLine);
+        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
+        
+        
     }
     
     int counter = 0;
@@ -171,7 +228,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     break;
             }
             */
-            System.out.println(camera);
+//            System.out.println(camera);
             
             repaint();
             try {

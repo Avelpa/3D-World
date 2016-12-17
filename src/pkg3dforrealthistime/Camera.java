@@ -77,8 +77,6 @@ public class Camera {
         double nzAngle = MyVector.angleBetween(scaledUnitProjNZ, this.normal);
         nzAngle *= Math.signum(scaledUnitProjNZ.scalarProject(this.y2D));
         
-//        System.out.println(nyAngle);
-        
         MyVector relativeX = new MyVector(0, nyAngle / (this.fov / 2), 0);
         MyVector relativeY = new MyVector(0, 0, nzAngle / (this.fov / 2));
         
@@ -88,61 +86,6 @@ public class Camera {
         
         return relativeX.add(relativeY);
     }
-    /*
-    public MyVector getProjection(MyVector subject, int scrHalfLength, int scrHalfHeight) {
-        
-        double fovRadians = Math.toRadians(this.fov);
-        /*
-        // get vertical angle
-        MyVector verticalProjection = subject.projectOntoPlane(this.x2D.sub(this.position), this.position);
-        double verticalAngle = MyVector.angleBetween(verticalProjection.sub(this.position), this.normal.sub(this.position));
-
-        // get horizontal angle
-        MyVector horizontalProjection = subject.projectOntoPlane(this.y2D.sub(this.position), this.position);
-        double horizontalAngle = MyVector.angleBetween(horizontalProjection.sub(this.position), this.normal.sub(this.position));
-        
-        System.out.printf("vertical angle: %g, horizontal angle: %g\n", verticalAngle, horizontalAngle);
-        
-        // scaled vertical proj
-        MyVector verticalUnit = verticalProjection.unit().mult(this.normal.length()).vectorProject(this.normal);
-        *
-        
-//        System.out.println("subject: "  + subject);
-        
-        // scaled to radius
-        MyVector scaledUnit = subject.sub(this.position).unit().mult(this.normal.length());
-        
-//        System.out.println("pos: " + this.position);
-//        System.out.println("sub sub pos: "  + subject.sub(this.position));
-//        System.out.println("scaled unit: " + scaledUnit.sub(this.position));
-//        System.out.println("normal length: " + this.normal.sub(this.position).length());
-        
-        // project onto the arc extending from fov applied to the normal
-        MyVector normalToScreen = this.normal.unit().mult(this.normal.length() * Math.abs(Math.cos(fovRadians / 2)));
-        MyVector screenProj = scaledUnit.projectOntoPlane(this.normal, normalToScreen);
-        
-//        System.out.println("fuck me: " + scaledUnit.sub(this.position.add(normalToScreen)));
-        
-//        System.out.println("normal to screen: " + normalToScreen);
-//        System.out.println("screen proj: " + screenProj);
-        
-        MyVector relativeX = screenProj.vectorProject(this.x2D);
-        MyVector relativeY = screenProj.vectorProject(this.y2D);
-        
-        
-//        System.out.println("relX: " + relativeX);
-        
-        
-        relativeX = relativeX.unit().mult(relativeX.length() / (this.normal.length() * Math.abs(Math.sin(fovRadians / 2))) * scrHalfLength);
-        relativeY = relativeY.unit().mult(relativeY.length() / (this.normal.length() * Math.abs(Math.sin(fovRadians / 2))) * scrHalfHeight);
-
-//        System.out.println(relativeX);
-        
-        
-        return relativeX.add(relativeY);
-    }*/
-    
-    
     
     // left = pos, right = neg
     public void rotateHorizontally(double degrees) {
@@ -159,6 +102,22 @@ public class Camera {
         
         yRot += degrees;
         yRot %= 360;
+    }
+    
+    public MyVector getNormal() {
+        return this.normal;
+    }
+    public MyVector getX2D() {
+        return this.x2D;
+    }
+    public MyVector getY2D() {
+        return this.y2D;
+    }
+    public MyVector getPos() {
+        return this.position;
+    }
+    public double getFov() {
+        return this.fov;
     }
     
     @Override
