@@ -44,6 +44,9 @@ public class Spectator {
     public void moveRight() {
         this.camera.moveRight(this.speed);
     }
+    public void moveDown() {
+        this.camera.moveBy(MyVector.Z.mult(-this.speed));
+    }
     
     public void lookLeft(int pixels) {
         this.camera.rotateAroundRelativeAxis(MyVector.Z, pixels * this.lookDegrees);

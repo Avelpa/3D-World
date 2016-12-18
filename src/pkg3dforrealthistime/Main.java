@@ -76,7 +76,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         WASD.put('a', false);
         WASD.put('s', false);
         WASD.put('d', false);
-        
+        WASD.put('1', false);
         
         player = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
         player.setSpeed(0.1);
@@ -194,6 +194,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             case 'd':
                                 player.moveRight();
                                 break;
+                            case '1':
+                                player.moveDown();
+                                break;
                         }
                     }
                 }
@@ -294,22 +297,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             return;
         }*/
         
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_LEFT:
-                player.lookLeft(1);
-                break;
-            case KeyEvent.VK_RIGHT:
-                player.lookRight(1);
-                break;
-            case KeyEvent.VK_DOWN:
-                player.lookDown(1);
-                break;
-            case KeyEvent.VK_UP:
-                player.lookUp(1);
-                break;
-                
-        }
-        
         if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
             playerActive = !playerActive;
             if (playerActive) {
@@ -324,7 +311,12 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         char keyChar = Character.toLowerCase(e.getKeyChar());
         if (WASD.containsKey(keyChar)) {
             WASD.put(keyChar, true);
+        } else {
+            if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK) {
+                WASD.put('1', true);
+            }
         }
+        
     }
 
     @Override
@@ -332,6 +324,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         char keyChar = Character.toLowerCase(e.getKeyChar());
         if (WASD.containsKey(keyChar)) {
             WASD.put(keyChar, false);
+        } else {
+            if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK) {
+                WASD.put('1', false);
+            }
         }
     }
 
