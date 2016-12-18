@@ -78,7 +78,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         WASD.put('d', false);
         
         
-        player = new Spectator(MyVector.X.mult(5), MyVector.ZERO, new Camera(0.017, 60, PPM));
+        player = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
         player.setSpeed(0.1);
         player.setLookDegrees(0.25);
         
