@@ -5,17 +5,22 @@
  */
 package pkg3dforrealthistime;
 
-import MyVector.MyMatrix;
 import MyVector.MyVector;
+import java.awt.AWTException;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -29,19 +34,21 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     private JFrame frame;
     
     private final int WIDTH = 800, HEIGHT = 800;
-    
     private final int PPM = 100;
     
     ArrayList<MyVector> points = new ArrayList();
     
-    boolean mouseDown = false;
-    double zVel = 0.0, yVel = 0.0;
+    Spectator player;
     
-    Camera camera;
-    Camera camera2;
+    boolean mouseDown = false;
+    HashMap<Character, Boolean> WASD;
     
     int prevMouseX = -1;
     int prevMouseY = -1;
+    private Robot robot;
+    boolean centeringCursor = false;
+    private Cursor invisibleCursor;
+    boolean playerActive = false;
     
     public Main() {
         frame = new JFrame("3D");
@@ -55,56 +62,34 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
         
-        camera = new Camera(0.017, 90);
-        camera.moveTo(10, 0, 0);
-        
-        
-        camera2 = new Camera(0.017, 90);
-//        camera2.moveTo(10, -20, 2);
-//        camera2.rotateHorizontally(-70);
-        camera2.moveTo(10, -10, 0);
-        camera2.rotateHorizontally(-90);
-        
-//        points.add(new MyVector(0, -2, 0));
-//        points.add(new MyVector(0, 2, 0));
-//        points.add(new MyVector(0, 0, 2));
-//        points.add(new MyVector(0, 0, -2));
-        
-
-        for (int i = -WIDTH / 8 / PPM; i <= WIDTH / 8 / PPM; i ++) {
-            for (int j = -HEIGHT / 8 / PPM; j <= HEIGHT / 8 / PPM; j ++) {
-                for (int h = -2; h <= 2; h ++) {
-                    points.add(new MyVector(h, i, j));
-                }
-            }
+        try {
+            robot = new Robot();
+        } catch (AWTException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-//        for (float i = 0; i < 4; i += 0.25) {
-//            points.add(new MyVector(0, 0, i));
-//        }
-//        for (float i = 0; i > -4; i -= 0.25) {
-//            points.add(new MyVector(0, i, 0));
-//        }
+        invisibleCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+            Toolkit.getDefaultToolkit().getImage(""),
+            new Point(0, 0),
+            "invisible");
+        WASD = new HashMap();
+        WASD.put('w', false);
+        WASD.put('a', false);
+        WASD.put('s', false);
+        WASD.put('d', false);
         
+        
+        player = new Spectator(MyVector.X.mult(5), MyVector.ZERO, new Camera(0.017, 60, PPM));
+        player.setSpeed(0.1);
+        player.setLookDegrees(0.25);
+        
+        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
+           for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
+               for (int h = -2; h <= 2; h ++) {
+                   points.add(new MyVector(h, i, j));
+               }
+           }
+       }
     }
-    
-    private MyVector toScreenCoords(MyVector vector) {
-        
-        int x = WIDTH/2 + (int)(vector.y * PPM);
-        int y = HEIGHT/2 - (int)(vector.z * PPM);
-        
-        return new MyVector(x, y, 0);
-    }
-    private double[] mouseToCartesian(int y, int z) {
-        double[] res = new double[3];
-        
-        res[0] = 0.0;
-        res[1] = (y - WIDTH/2) / (double)PPM;
-        res[2] = (HEIGHT/2 - z) / (double)PPM;
-        
-        return res;
-    }
-    
     /**
      * @param args the command line arguments
      */
@@ -113,26 +98,27 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         main.run();
     }
     
-    
     @Override
     public void paintComponent(Graphics g) {
         
-//        g.clearRect(0, 0, WIDTH, HEIGHT);
-//        g.setColor(Color.DARK_GRAY);
-//        for (int i = 0; i < points.size(); i ++) {
-//            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM), (HEIGHT / PPM));
-////            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM / 2), (HEIGHT / PPM / 2));
-//            MyVector scrCoords = toScreenCoords(cameraCoords);
-//            g.fillOval((int)(scrCoords.x-5), (int)(scrCoords.y-5), 11, 11);
-//        }
+        g.clearRect(0, 0, WIDTH, HEIGHT);
+        g.setColor(Color.DARK_GRAY);
+        for (int i = 0; i < points.size(); i ++) {
+            MyVector camProj = player.getCamera().getProjection(points.get(i), WIDTH, HEIGHT);
+            if (camProj == null)
+                continue;
+            g.fillOval((int)(camProj.x-5), (int)(camProj.y-5), 11, 11);
+        }
         
-        
+        /* 2 CAMERA SET-UP
         g.setColor(Color.LIGHT_GRAY);
         g.fillRect(0, 0, WIDTH/2, HEIGHT);
         g.setColor(Color.DARK_GRAY);
         for (int i = 0; i < points.size(); i ++) {
 //            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM), (HEIGHT / PPM));
             MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM / 2), (HEIGHT / PPM / 2));
+            if (cameraCoords == null)
+                continue;
             MyVector scrCoords = toScreenCoords(cameraCoords);
             g.fillOval((int)(scrCoords.x-5) - WIDTH/4, (int)(scrCoords.y-5), 11, 11);
         }
@@ -148,67 +134,71 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         for (int i = 0; i < points.size(); i ++) {
 //            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM), (HEIGHT / PPM));
             MyVector cameraCoords = camera2.getProjection(points.get(i), (WIDTH / PPM / 2), (HEIGHT / PPM / 2));
+            if (cameraCoords == null)
+                continue;
             MyVector scrCoords = toScreenCoords(cameraCoords);
             g.fillOval((int)(scrCoords.x-5) + WIDTH/4, (int)(scrCoords.y-5), 11, 11);
         }
         
-        // camera center
         g.setColor(Color.MAGENTA);
-        MyVector cameraPos = camera2.getProjection(camera.getPos(), (WIDTH / PPM / 2), (HEIGHT / PPM / 2));
-        cameraPos = toScreenCoords(cameraPos);
-        g.fillOval((int)(cameraPos.x-5) + WIDTH/4, (int)(cameraPos.y-5), 11, 11);
-        // top fov
-        MyVector fovLine = camera2.getProjection(MyMatrix.rotateY(camera.getNormal().mult(1000), camera.getFov() / 2).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
-        fovLine = toScreenCoords(fovLine);
-        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
-        // bottom fov
-        fovLine = camera2.getProjection(MyMatrix.rotateY(camera.getNormal().mult(1000), -camera.getFov() / 2).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
-        fovLine = toScreenCoords(fovLine);
-        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
-        // left fov
-        fovLine = camera2.getProjection(MyMatrix.rotateZ(camera.getNormal().mult(1000), camera.getFov() / 2).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
-        fovLine = toScreenCoords(fovLine);
-        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
-        // right fov
-        fovLine = camera2.getProjection(MyMatrix.rotateZ(camera.getNormal().mult(1000), -camera.getFov() / 2).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
-        fovLine = toScreenCoords(fovLine);
-        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
-        // normal
+        MyVector camPos = camera2.getProjection(camera.getPos(), WIDTH / PPM / 2, HEIGHT / PPM / 2);
+        if (camPos != null) {
+            camPos = toScreenCoords(camPos);
+            g.fillOval((int)(camPos.x - 5) + WIDTH / 4, (int)(camPos.y - 5), 11, 11);
+        }
+        
         g.setColor(Color.BLUE);
-        fovLine = camera2.getProjection(camera.getNormal().mult(200).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
-        fovLine = toScreenCoords(fovLine);
-        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
-        // x2D
-        g.setColor(Color.GREEN);
-        fovLine = camera2.getProjection(camera.getX2D().mult(200).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
-        fovLine = toScreenCoords(fovLine);
-        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
-        // y2D
+        MyVector normPos = camera2.getProjection(camera.getNormal().mult(200).add(camera.getPos()), WIDTH / PPM / 2, HEIGHT / PPM / 2);
+        if (normPos != null) {
+            normPos = toScreenCoords(normPos);
+            g.drawLine((int)(camPos.x) + WIDTH / 4, (int)(camPos.y), (int)(normPos.x) + WIDTH / 4, (int)(normPos.y));
+        }
+        
         g.setColor(Color.RED);
-        fovLine = camera2.getProjection(camera.getY2D().mult(200).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
-        fovLine = toScreenCoords(fovLine);
-        g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
+        MyVector y2dPos = camera2.getProjection(camera.getY2D().mult(4).add(camera.getPos()), WIDTH / PPM / 2, HEIGHT / PPM / 2);
+        if (y2dPos != null) {
+            y2dPos = toScreenCoords(y2dPos);
+            g.drawLine((int)(camPos.x) + WIDTH / 4, (int)(camPos.y), (int)(y2dPos.x) + WIDTH / 4, (int)(y2dPos.y));
+        }
+        
+        g.setColor(Color.GREEN);
+        MyVector x2dPos = camera2.getProjection(camera.getX2D().mult(4).add(camera.getPos()), WIDTH / PPM / 2, HEIGHT / PPM / 2);
+        if (x2dPos != null) {
+            x2dPos = toScreenCoords(x2dPos);
+            g.drawLine((int)(camPos.x) + WIDTH / 4, (int)(camPos.y), (int)(x2dPos.x) + WIDTH / 4, (int)(x2dPos.y));
+        }*/
     }
     
     int counter = 0;
     int interval = 5 * 60;
     public void run() {
-        
         while (true) {
             
             if (mouseDown && this.getMousePosition() != null) {
-                points.add(new MyVector(mouseToCartesian((int)this.getMousePosition().getX(), (int)this.getMousePosition().getY())));
             }
             
-            if (yVel != 0 || zVel != 0) {
-                for (int i = 0; i < points.size(); i ++) {
-                    points.set(i, MyMatrix.rotateY(points.get(i), yVel));
-                    points.set(i, MyMatrix.rotateZ(points.get(i), zVel));
+            if (playerActive) {
+                for (Character key: WASD.keySet()) {
+                    if (WASD.get(key) == true) {
+                        switch (key) {
+                            case 'w':
+                                player.moveForward();
+                                break;
+                            case 's':
+                                player.moveBackward();
+                                break;
+                            case 'a':
+                                player.moveLeft();
+                                break;
+                            case 'd':
+                                player.moveRight();
+                                break;
+                        }
+                    }
                 }
             }
             
-            
-            /*
+            /* demo cycle
             
             counter ++;
 
@@ -266,90 +256,54 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     @Override
     public void keyPressed(KeyEvent e) {
+        
+        /* -- for demo cycle
         if (e.getKeyCode() == KeyEvent.VK_SPACE) {
             counter /= interval;
             counter *= interval;
             counter += interval - 1;
             return;
-        }
+        }*/
         
-        int incr = 5;
-        
-        double rotAmount = 1;
         switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                camera.rotateVertically(rotAmount);
-                break;
-            case KeyEvent.VK_DOWN:
-                camera.rotateVertically(-rotAmount);
-                break;
             case KeyEvent.VK_LEFT:
-                camera.rotateHorizontally(rotAmount);
+                player.lookLeft(1);
                 break;
             case KeyEvent.VK_RIGHT:
-                camera.rotateHorizontally(-rotAmount);
+                player.lookRight(1);
                 break;
-        }
-        System.out.printf("%s %s\n", 
-            MyVector.angleBetween(camera.getNormal(), camera.getY2D()),
-            MyVector.angleBetween(camera.getNormal(), camera.getX2D())
-        );
-        System.out.println(camera);
-        
-        double accel = 0.5;
-        switch (e.getKeyChar()) {
-            case 'W':
-                yVel -= accel;
+            case KeyEvent.VK_DOWN:
+                player.lookDown(1);
                 break;
-            case 'S':
-                yVel += accel;
+            case KeyEvent.VK_UP:
+                player.lookUp(1);
                 break;
-            case 'A':
-                zVel -= accel;
-                break;
-            case 'D':
-                zVel += accel;
-                break;
+                
         }
         
-        double moveDist = 0.1;
-        switch (e.getKeyChar()) {
-            case 'w':
-                camera.moveDepthwise(moveDist);
-//                camera.moveBy(-moveDist, 0, 0);
-                break;
-            case 's':
-                camera.moveDepthwise(-moveDist);
-//                camera.moveBy(moveDist, 0, 0);
-                break;
-            case 'a':
-                camera.moveHorizontally(-moveDist);
-//                camera.moveBy(0, -moveDist, 0);
-                break;
-            case 'd':
-                camera.moveHorizontally(moveDist);
-//                camera.moveBy(0, moveDist, 0);
-                break;
-            case 'j':
-                camera.moveVertically(-moveDist);
-//                camera.moveBy(0, 0, -moveDist);
-                break;
-            case 'k':
-                camera.moveVertically(moveDist);
-//                camera.moveBy(0, 0, moveDist);
-                break;
-            case 'r':
-                yVel = 0;
-                zVel = 0;
-                points.clear();
-                break;
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+            playerActive = !playerActive;
+            if (playerActive) {
+                robot.mouseMove((int)this.getLocationOnScreen().getX() + WIDTH/2, (int)this.getLocationOnScreen().getY() + HEIGHT/2);
+                centeringCursor = true;
+                frame.setCursor(invisibleCursor);
+            } else {
+                frame.setCursor(Cursor.getDefaultCursor());
+            }
+        }
+        
+        char keyChar = Character.toLowerCase(e.getKeyChar());
+        if (WASD.containsKey(keyChar)) {
+            WASD.put(keyChar, true);
         }
     }
 
     @Override
-    public void keyReleased(KeyEvent e) {/*
-        yVel = 0;
-        zVel = 0;*/
+    public void keyReleased(KeyEvent e) {
+        char keyChar = Character.toLowerCase(e.getKeyChar());
+        if (WASD.containsKey(keyChar)) {
+            WASD.put(keyChar, false);
+        }
     }
 
     @Override
@@ -368,8 +322,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     @Override
     public void mouseEntered(MouseEvent e) {
-        prevMouseX = e.getX();
-        prevMouseY = e.getY();
     }
 
     @Override
@@ -385,15 +337,35 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        if (prevMouseX != -1) {
-//            camera.rotateHorizontally(-0.5 * (e.getX() - prevMouseX));
-        }
-        prevMouseX = e.getX();
         
-        if (prevMouseY != -1) {
-//            camera.rotateVertically(0.5 * (e.getY() - prevMouseY));
+        if (playerActive) {
+            
+            if (!centeringCursor) {
+                if (prevMouseX != -1) {
+                    int pixels = e.getX() - prevMouseX;
+                    if (pixels < 0) {
+                        player.lookLeft(-pixels);
+                    } else {
+                        player.lookRight(pixels);
+                    }
+                }
+                if (prevMouseY != -1) {
+                    int pixels = e.getY() - prevMouseY;
+                    if (pixels < 0) {
+                        player.lookUp(-pixels);
+                    } else {
+                        player.lookDown(pixels);
+                    }
+                }
+                robot.mouseMove((int)this.getLocationOnScreen().getX() + WIDTH/2, (int)this.getLocationOnScreen().getY() + HEIGHT/2);
+                centeringCursor = true;
+            } else {
+                centeringCursor = false;
+            }
+            
+            prevMouseX = e.getX();
+            prevMouseY = e.getY();
         }
-        prevMouseY = e.getY();
     }
     
     

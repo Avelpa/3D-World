@@ -23,11 +23,6 @@ public class MyVector {
         this.y = y;
         this.z = z;
     }
-    public MyVector(double xyz[]) {
-        this.x = xyz[0];
-        this.y = xyz[1];
-        this.z = xyz[2];
-    }
     
     public MyVector mult(double factor) {
         return new MyVector(this.x*factor, this.y*factor, this.z*factor);
