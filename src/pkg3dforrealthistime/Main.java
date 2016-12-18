@@ -28,7 +28,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     
     private JFrame frame;
     
-    private final int WIDTH = 1200, HEIGHT = 800;
+    private final int WIDTH = 800, HEIGHT = 800;
     
     private final int PPM = 100;
     
@@ -58,24 +58,34 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         camera = new Camera(0.017, 90);
         camera.moveTo(10, 0, 0);
         
+        
         camera2 = new Camera(0.017, 90);
-        camera2.moveTo(10, -20, 2);
-        camera2.rotateHorizontally(-70);
+//        camera2.moveTo(10, -20, 2);
+//        camera2.rotateHorizontally(-70);
+        camera2.moveTo(10, -10, 0);
+        camera2.rotateHorizontally(-90);
         
 //        points.add(new MyVector(0, -2, 0));
 //        points.add(new MyVector(0, 2, 0));
 //        points.add(new MyVector(0, 0, 2));
 //        points.add(new MyVector(0, 0, -2));
         
-        for (int i = -WIDTH/8/PPM; i <= WIDTH/8/PPM; i ++) {
-            for (int j = -HEIGHT/8/PPM; j <= HEIGHT/8/PPM; j ++) {
+
+        for (int i = -WIDTH / 8 / PPM; i <= WIDTH / 8 / PPM; i ++) {
+            for (int j = -HEIGHT / 8 / PPM; j <= HEIGHT / 8 / PPM; j ++) {
                 for (int h = -2; h <= 2; h ++) {
                     points.add(new MyVector(h, i, j));
                 }
             }
         }
+
+//        for (float i = 0; i < 4; i += 0.25) {
+//            points.add(new MyVector(0, 0, i));
+//        }
+//        for (float i = 0; i > -4; i -= 0.25) {
+//            points.add(new MyVector(0, i, 0));
+//        }
         
-//        points.add(new MyVector(0, 0, 0));
     }
     
     private MyVector toScreenCoords(MyVector vector) {
@@ -103,10 +113,21 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         main.run();
     }
     
+    
     @Override
     public void paintComponent(Graphics g) {
-        g.clearRect(0, 0, WIDTH, HEIGHT);
-        g.setColor(new Color(0, 0, 0, 0.1f));
+        
+//        g.clearRect(0, 0, WIDTH, HEIGHT);
+//        g.setColor(Color.DARK_GRAY);
+//        for (int i = 0; i < points.size(); i ++) {
+//            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM), (HEIGHT / PPM));
+////            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM / 2), (HEIGHT / PPM / 2));
+//            MyVector scrCoords = toScreenCoords(cameraCoords);
+//            g.fillOval((int)(scrCoords.x-5), (int)(scrCoords.y-5), 11, 11);
+//        }
+        
+        
+        g.setColor(Color.LIGHT_GRAY);
         g.fillRect(0, 0, WIDTH/2, HEIGHT);
         g.setColor(Color.DARK_GRAY);
         for (int i = 0; i < points.size(); i ++) {
@@ -167,8 +188,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         fovLine = camera2.getProjection(camera.getY2D().mult(200).add(camera.getPos()), (WIDTH / PPM/2), (HEIGHT / PPM / 2));
         fovLine = toScreenCoords(fovLine);
         g.drawLine((int)(cameraPos.x + WIDTH/4), (int)(cameraPos.y), (int)(fovLine.x) + WIDTH/4, (int)(fovLine.y));
-        
-        
     }
     
     int counter = 0;
@@ -187,6 +206,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     points.set(i, MyMatrix.rotateZ(points.get(i), zVel));
                 }
             }
+            
+            
             /*
             
             counter ++;
@@ -252,30 +273,30 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             return;
         }
         
-        
-        
         int incr = 5;
         
-        double accel = 0.5;
+        double rotAmount = 1;
         switch (e.getKeyCode()) {
             case KeyEvent.VK_UP:
-                camera.rotateVertically(1);
-//                yVel -= accel;
+                camera.rotateVertically(rotAmount);
                 break;
             case KeyEvent.VK_DOWN:
-                camera.rotateVertically(-1);
-//                yVel += accel;
+                camera.rotateVertically(-rotAmount);
                 break;
             case KeyEvent.VK_LEFT:
-                camera.rotateHorizontally(1);
-//                zVel -= accel;
+                camera.rotateHorizontally(rotAmount);
                 break;
             case KeyEvent.VK_RIGHT:
-                camera.rotateHorizontally(-1);
-//                zVel += accel;
+                camera.rotateHorizontally(-rotAmount);
                 break;
         }
-        double rotAmount = 1;
+        System.out.printf("%s %s\n", 
+            MyVector.angleBetween(camera.getNormal(), camera.getY2D()),
+            MyVector.angleBetween(camera.getNormal(), camera.getX2D())
+        );
+        System.out.println(camera);
+        
+        double accel = 0.5;
         switch (e.getKeyChar()) {
             case 'W':
                 yVel -= accel;

@@ -82,18 +82,19 @@ public class MyMatrix {
     
     
     public static MyVector rotate(MyVector vector, MyVector axisDirVector, MyVector axisPoint, double degrees) {
-        
         vector = vector.sub(axisPoint);
         
         MyVector XYproj = axisDirVector.projectOntoPlane(MyVector.Z, MyVector.ZERO);
         double XYangle = MyVector.angleBetween(XYproj, MyVector.X);
         double xySign = Math.signum(XYproj.scalarProject(MyVector.Y));
         
+        vector = MyMatrix.rotateZ(vector, -XYangle * xySign);
+        axisDirVector = MyMatrix.rotateZ(axisDirVector, -XYangle * xySign);
+        
         MyVector XZproj = axisDirVector.projectOntoPlane(MyVector.Y, MyVector.ZERO);
         double XZangle = MyVector.angleBetween(XZproj, MyVector.X);
         double xzSign = Math.signum(XZproj.scalarProject(MyVector.Z.mult(-1)));
         
-        vector = MyMatrix.rotateZ(vector, -XYangle * xySign);
         vector = MyMatrix.rotateY(vector, -XZangle * xzSign);
         
         vector = MyMatrix.rotateX(vector, degrees);

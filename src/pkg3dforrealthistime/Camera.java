@@ -89,14 +89,15 @@ public class Camera {
     
     // left = pos, right = neg
     public void rotateHorizontally(double degrees) {
+//        System.out.println("rot hor: " + degrees + "about: " + this.y2D);
         this.x2D = MyMatrix.rotate(this.x2D, this.y2D, MyVector.ZERO, degrees);
         this.normal = MyMatrix.rotate(this.normal, this.y2D, MyVector.ZERO, degrees);
-        
         zRot += degrees;
         zRot %= 360;
     }
     // left = pos, right = neg
     public void rotateVertically(double degrees) {
+//        System.out.println("rot vert: " + degrees + "about: " + this.x2D);
         this.y2D = MyMatrix.rotate(this.y2D, this.x2D, MyVector.ZERO, degrees);
         this.normal = MyMatrix.rotate(this.normal, this.x2D, MyVector.ZERO, degrees);
         
