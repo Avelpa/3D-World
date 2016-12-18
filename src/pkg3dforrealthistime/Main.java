@@ -80,7 +80,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         
         player = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
         player.setSpeed(0.1);
-        player.setLookDegrees(0.25);
+        player.setLookDegrees(0.2);
         
         for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
            for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
@@ -175,6 +175,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         while (true) {
             
             if (mouseDown && this.getMousePosition() != null) {
+                points.add(player.getCamera().getPos().add(player.getCamera().getNormal().unit()));
             }
             
             if (playerActive) {
@@ -248,6 +249,34 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+    
+    private void pan(MouseEvent e) {
+        if (!centeringCursor) {
+            if (prevMouseX != -1) {
+                int pixels = e.getX() - prevMouseX;
+                if (pixels < 0) {
+                    player.lookLeft(-pixels);
+                } else {
+                    player.lookRight(pixels);
+                }
+            }
+            if (prevMouseY != -1) {
+                int pixels = e.getY() - prevMouseY;
+                if (pixels < 0) {
+                    player.lookUp(-pixels);
+                } else {
+                    player.lookDown(pixels);
+                }
+            }
+            robot.mouseMove((int)this.getLocationOnScreen().getX() + WIDTH/2, (int)this.getLocationOnScreen().getY() + HEIGHT/2);
+            centeringCursor = true;
+        } else {
+            centeringCursor = false;
+        }
+
+        prevMouseX = e.getX();
+        prevMouseY = e.getY();
     }
 
     @Override
@@ -333,38 +362,15 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     @Override
     public void mouseDragged(MouseEvent e) {
         mouseDown = true;
+        if (playerActive) {
+            pan(e);
+        }
     }
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        
         if (playerActive) {
-            
-            if (!centeringCursor) {
-                if (prevMouseX != -1) {
-                    int pixels = e.getX() - prevMouseX;
-                    if (pixels < 0) {
-                        player.lookLeft(-pixels);
-                    } else {
-                        player.lookRight(pixels);
-                    }
-                }
-                if (prevMouseY != -1) {
-                    int pixels = e.getY() - prevMouseY;
-                    if (pixels < 0) {
-                        player.lookUp(-pixels);
-                    } else {
-                        player.lookDown(pixels);
-                    }
-                }
-                robot.mouseMove((int)this.getLocationOnScreen().getX() + WIDTH/2, (int)this.getLocationOnScreen().getY() + HEIGHT/2);
-                centeringCursor = true;
-            } else {
-                centeringCursor = false;
-            }
-            
-            prevMouseX = e.getX();
-            prevMouseY = e.getY();
+            pan(e);
         }
     }
     
