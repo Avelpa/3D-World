@@ -33,8 +33,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     
     private JFrame frame;
     
-    private final int WIDTH = 1200, HEIGHT = 800;
-    final int PPM = 100;
+    private final int WIDTH = 1366, HEIGHT = 720;
+    private final int PPM = 100;
     
     private HashMap<MyVector, Color> grid = new HashMap();
     double gridDist = 2; // maybe make final
@@ -84,7 +84,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_D, false);
         keys.put(KeyEvent.VK_CAPS_LOCK, false);
         keys.put(KeyEvent.VK_SPACE, false);
-        keys.put(KeyEvent.VK_TAB, false);
         
         player1 = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
         player1.setAccel(0.0005);
@@ -95,6 +94,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         player2.setAccel(0.0005);
         player2.setMaxVel(0.4);
         player2.setLookDegrees(0.2);
+        
+        player = player1;
         
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
 //            for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
@@ -114,17 +115,24 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     
     @Override
     public void paintComponent(Graphics g) {
-        
         g.clearRect(0, 0, WIDTH, HEIGHT);
 //        g.setColor(new Color(0f, 0.9f, 0f, 0.2f));
 
         // player 1:
         for (MyVector point: grid.keySet()) {
             g.setColor(grid.get(point));
-            MyVector camProj = player.getCamera().getProjection(point, WIDTH / 2, HEIGHT / 2);
+            MyVector camProj = player1.getCamera().getProjection(point, WIDTH / 2, HEIGHT);
             if (camProj == null)
                 continue;
             g.fillOval((int)(camProj.x-20 - WIDTH / 4), (int)(camProj.y-20), 41, 41);
+        }
+        // player 2:
+        for (MyVector point: grid.keySet()) {
+            g.setColor(grid.get(point));
+            MyVector camProj = player2.getCamera().getProjection(point, WIDTH / 2, HEIGHT);
+            if (camProj == null)
+                continue;
+            g.fillOval((int)(camProj.x-20 + WIDTH / 4), (int)(camProj.y-20), 41, 41);
         }
         
         // separator
@@ -135,9 +143,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             g.setColor(Color.BLACK);
             MyVector potScrn = player.getCamera().getProjection(potentialPoint, WIDTH, HEIGHT);
             if (potScrn != null) {
-                g.drawOval((int)(potScrn.x - 5), (int)(potScrn.y - 5), 10, 10);
+                int offset = player == player1 ? WIDTH / 4 : -WIDTH / 4;
+                g.drawOval((int)(potScrn.x - 5 - offset), (int)(potScrn.y - 5), 10, 10);
             }
         }
+        
+        
+        
         
         if (!running) {
             g.setColor(Color.RED);
@@ -209,10 +221,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             
             if (playerActive) {
                 
-                player1.move();
+                player.move();
                 
                 if (!running) {
-                    MyVector newPoint = player1.getCamera().getPos().add(player1.getCamera().getNormal().unit().mult(3));
+                    MyVector newPoint = player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(3));
                     double newX = newPoint.x % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.x / gridDist) * gridDist : Math.floor(newPoint.x / gridDist) * gridDist;
                     double newY = newPoint.y % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.y / gridDist) * gridDist : Math.floor(newPoint.y / gridDist) * gridDist;
                     double newZ = newPoint.z % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.z / gridDist) * gridDist : Math.floor(newPoint.z / gridDist) * gridDist;
@@ -261,8 +273,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                 running = !running;
                                 keys.put(KeyEvent.VK_S, false);
                                 break;
-                            case KeyEvent.VK_TAB:
+                            case KeyEvent.VK_A:
                                 player = player == player1 ? player2 : player1;
+                                keys.put(KeyEvent.VK_A, false);
                                 break;
                         }
                     }
@@ -385,7 +398,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     @Override
     public void keyReleased(KeyEvent e) {
-        char keyChar = Character.toLowerCase(e.getKeyChar());
         if (keys.containsKey(e.getKeyCode())) {
             keys.put(e.getKeyCode(), false);
         }
