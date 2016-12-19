@@ -64,10 +64,8 @@ public class Camera {
         
         MyVector scaledUnit = subject.sub(this.position).unit().mult(this.normal.length());
         
-        double aspectRatio = SCR_WIDTH/SCR_HEIGHT;
-        
+        double aspectRatio = (double)SCR_WIDTH / SCR_HEIGHT;
         double horFovRad = Math.toRadians(this.FOV);
-        
         double vertFovRad = horFovRad/aspectRatio;
         
         MyVector relSubj = subject.sub(this.position);
@@ -86,7 +84,6 @@ public class Camera {
         double horRatio = horVec.length() / horRange;
         double horRatioSign = Math.signum(horVec.scalarProject(this.x2D));
         horRatio *= horRatioSign;
-        
         
         MyVector projNZ = relSubj.projectOntoPlane(this.x2D, MyVector.ZERO);
         

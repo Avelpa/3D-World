@@ -124,7 +124,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             MyVector camProj = player1.getCamera().getProjection(point, WIDTH / 2, HEIGHT);
             if (camProj == null)
                 continue;
-            g.fillOval((int)(camProj.x-20 - WIDTH / 4), (int)(camProj.y-20), 41, 41);
+            g.fillOval((int)(camProj.x-20), (int)(camProj.y-20), 41, 41);
         }
         // player 2:
         for (MyVector point: grid.keySet()) {
@@ -132,7 +132,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             MyVector camProj = player2.getCamera().getProjection(point, WIDTH / 2, HEIGHT);
             if (camProj == null)
                 continue;
-            g.fillOval((int)(camProj.x-20 + WIDTH / 4), (int)(camProj.y-20), 41, 41);
+            
+            g.fillOval((int)(camProj.x-20 + WIDTH / 2), (int)(camProj.y-20), 41, 41);
         }
         
         // separator
@@ -141,10 +142,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         
         if (potentialPoint != null && !running) {
             g.setColor(Color.BLACK);
-            MyVector potScrn = player.getCamera().getProjection(potentialPoint, WIDTH, HEIGHT);
+            MyVector potScrn = player.getCamera().getProjection(potentialPoint, WIDTH / 2, HEIGHT);
             if (potScrn != null) {
-                int offset = player == player1 ? WIDTH / 4 : -WIDTH / 4;
-                g.drawOval((int)(potScrn.x - 5 - offset), (int)(potScrn.y - 5), 10, 10);
+                int offset = player == player2 ? WIDTH / 2 : 0;
+                g.drawOval((int)(potScrn.x - 5 + offset), (int)(potScrn.y - 5), 10, 10);
             }
         }
         
@@ -224,7 +225,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 player.move();
                 
                 if (!running) {
-                    MyVector newPoint = player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(3));
+                    MyVector newPoint = player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(4));
                     double newX = newPoint.x % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.x / gridDist) * gridDist : Math.floor(newPoint.x / gridDist) * gridDist;
                     double newY = newPoint.y % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.y / gridDist) * gridDist : Math.floor(newPoint.y / gridDist) * gridDist;
                     double newZ = newPoint.z % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.z / gridDist) * gridDist : Math.floor(newPoint.z / gridDist) * gridDist;
@@ -349,17 +350,17 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             if (prevMouseX != -1) {
                 int pixels = e.getX() - prevMouseX;
                 if (pixels < 0) {
-                    player1.lookLeft(-pixels);
+                    player.lookLeft(-pixels);
                 } else {
-                    player1.lookRight(pixels);
+                    player.lookRight(pixels);
                 }
             }
             if (prevMouseY != -1) {
                 int pixels = e.getY() - prevMouseY;
                 if (pixels < 0) {
-                    player1.lookUp(-pixels);
+                    player.lookUp(-pixels);
                 } else {
-                    player1.lookDown(pixels);
+                    player.lookDown(pixels);
                 }
             }
             robot.mouseMove((int)this.getLocationOnScreen().getX() + WIDTH/2, (int)this.getLocationOnScreen().getY() + HEIGHT/2);
