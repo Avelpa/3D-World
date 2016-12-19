@@ -33,7 +33,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     
     private JFrame frame;
     
-    private final int WIDTH = 800, HEIGHT = 800;
+    private final int WIDTH = 1366, HEIGHT = 720;
     private final int PPM = 100;
     
     private HashMap<MyVector, Color> grid = new HashMap();

@@ -64,12 +64,17 @@ public class Camera {
         
         MyVector scaledUnit = subject.sub(this.position).unit().mult(this.normal.length());
         
-        double fovRad = Math.toRadians(this.FOV);
+        double aspectRatio = SCR_WIDTH/SCR_HEIGHT;
+        
+        double horFovRad = Math.toRadians(this.FOV);
+        
+        double vertFovRad = horFovRad/aspectRatio;
+        
         MyVector relSubj = subject.sub(this.position);
         
         MyVector extendedNormal = relSubj.vectorProject(this.normal);
-        double horRange = extendedNormal.length() * Math.tan(fovRad / 2);
-        double vertRange = extendedNormal.length() * Math.tan(fovRad / 2);
+        double horRange = extendedNormal.length() * Math.tan(horFovRad / 2);
+        double vertRange = extendedNormal.length() * Math.tan(vertFovRad / 2);
         
         MyVector projNY = relSubj.projectOntoPlane(this.y2D, MyVector.ZERO);
         
