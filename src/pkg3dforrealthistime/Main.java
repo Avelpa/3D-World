@@ -19,8 +19,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -36,12 +36,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     private final int WIDTH = 1366, HEIGHT = 720;
     private final int PPM = 100;
     
-    private HashMap<MyVector, Color> grid = new HashMap();
-    double gridDist = 2; // maybe make final
-    MyVector potentialPoint = null;
+    ArrayList<MyVector> points = new ArrayList();
     
-    Spectator player1 = null;
-    Spectator player2 = null;
     Spectator player = null;
     
     boolean mouseDown = false;
@@ -54,7 +50,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     private Cursor invisibleCursor;
     
     boolean playerActive = false;
-    boolean running = false;
     
     public Main() {
         frame = new JFrame("3D");
@@ -85,17 +80,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_CAPS_LOCK, false);
         keys.put(KeyEvent.VK_SPACE, false);
         
-        player1 = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
-        player1.setAccel(0.0005);
-        player1.setMaxVel(0.4);
-        player1.setLookDegrees(0.2);
-        
-        player2 = new Spectator(MyVector.Y.mult(20), new MyVector(90, 0, 0), new Camera(0.017, 60, PPM));
-        player2.setAccel(0.0005);
-        player2.setMaxVel(0.4);
-        player2.setLookDegrees(0.2);
-        
-        player = player1;
+        player = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
+        player.setAccel(0.0005);
+        player.setMaxVel(0.4);
+        player.setLookDegrees(0.2);
         
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
 //            for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
@@ -119,40 +107,15 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 //        g.setColor(new Color(0f, 0.9f, 0f, 0.2f));
 
         // player 1:
-        for (MyVector point: grid.keySet()) {
-            g.setColor(grid.get(point));
-            MyVector camProj = player1.getCamera().getProjection(point, WIDTH / 2, HEIGHT);
+        g.setColor(Color.DARK_GRAY);
+        for (MyVector point: points) {
+            MyVector camProj = player.getCamera().getProjection(point, WIDTH, HEIGHT);
             if (camProj == null)
                 continue;
             g.fillOval((int)(camProj.x-20), (int)(camProj.y-20), 41, 41);
         }
-        // player 2:
-        for (MyVector point: grid.keySet()) {
-            g.setColor(grid.get(point));
-            MyVector camProj = player2.getCamera().getProjection(point, WIDTH / 2, HEIGHT);
-            if (camProj == null)
-                continue;
-            
-            g.fillOval((int)(camProj.x-20 + WIDTH / 2), (int)(camProj.y-20), 41, 41);
-        }
         
-        // separator
-        g.setColor(Color.RED);
-        g.drawLine(WIDTH / 2, 0, WIDTH / 2, HEIGHT);
-        
-        if (potentialPoint != null && !running) {
-            g.setColor(Color.BLACK);
-            MyVector potScrn = player.getCamera().getProjection(potentialPoint, WIDTH / 2, HEIGHT);
-            if (potScrn != null) {
-                int offset = player == player2 ? WIDTH / 2 : 0;
-                g.drawOval((int)(potScrn.x - 5 + offset), (int)(potScrn.y - 5), 10, 10);
-            }
-        }
-        
-        
-        
-        
-        if (!running) {
+        if (!playerActive) {
             g.setColor(Color.RED);
             g.drawRect(0, 0, WIDTH-1, HEIGHT-1);
         }
@@ -222,25 +185,12 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             
             if (playerActive) {
                 
-                player.move();
-                
-                if (!running) {
+                if (mouseDown) {
                     MyVector newPoint = player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(4));
-                    double newX = newPoint.x % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.x / gridDist) * gridDist : Math.floor(newPoint.x / gridDist) * gridDist;
-                    double newY = newPoint.y % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.y / gridDist) * gridDist : Math.floor(newPoint.y / gridDist) * gridDist;
-                    double newZ = newPoint.z % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.z / gridDist) * gridDist : Math.floor(newPoint.z / gridDist) * gridDist;
-                    potentialPoint = new MyVector(newX, newY, newZ);
-
-                    if (mouseDown && this.getMousePosition() != null) {
-                        if (!grid.containsKey(potentialPoint)) {
-                            grid.put(potentialPoint, genRandColor());
-                        }
-                    }
-                } else {
-                    counter ++;
-                    if (counter % 60 == 0)
-                        runLife();
+                    points.add(newPoint);
                 }
+                
+                player.move();
                 
                 for (Integer key: keys.keySet()) {
                     if (keys.get(key) == true) {
@@ -266,21 +216,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         }
                     }
                 }
-            } else {
-                for (Integer key: keys.keySet()) {
-                    if (keys.get(key) == true) {
-                        switch (key) {
-                            case KeyEvent.VK_S:
-                                running = !running;
-                                keys.put(KeyEvent.VK_S, false);
-                                break;
-                            case KeyEvent.VK_A:
-                                player = player == player1 ? player2 : player1;
-                                keys.put(KeyEvent.VK_A, false);
-                                break;
-                        }
-                    }
-                }
             }
             
             repaint();
@@ -290,61 +225,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-    }
-    
-    HashSet<MyVector> curEmptyNeighbors = new HashSet();
-    HashSet<MyVector> checkedEmptyNeighbors = new HashSet();
-    void runLife() {
-        HashMap<MyVector, Color> toAdd = new HashMap();
-        HashSet<MyVector> toDelete = new HashSet();
-        
-        for (MyVector point: grid.keySet()) {
-            int numNeighbors = getNumNeighbors(point, false);
-            if (numNeighbors < 2 || numNeighbors > 3) {
-                toDelete.add(point);
-            }
-            for (MyVector empty : curEmptyNeighbors) {
-                
-                numNeighbors = getNumNeighbors(empty, true);
-                if (numNeighbors == 3)
-                    toAdd.put(empty, genRandColor());
-                
-                checkedEmptyNeighbors.add(empty);
-            }
-            curEmptyNeighbors.clear();
-        }
-        for (MyVector del: toDelete) {
-            grid.remove(del);
-        }
-        grid.putAll(toAdd);
-        checkedEmptyNeighbors.clear();
-    }
-    int getNumNeighbors(MyVector point, boolean emptyCheck) {
-        int numNeighbors = 0;
-        for (double x = point.x + gridDist; x >= point.x - gridDist; x -= gridDist) {
-            for (double z = point.z + gridDist; z >= point.z - gridDist; z -= gridDist) {
-                for (double y = point.y - gridDist; y <= point.y + gridDist; y += gridDist) {
-                    if (x == point.x && y == point.y && z == point.z)
-                        continue;
-                    
-                    MyVector testPoint = new MyVector(x, y, z);
-                    if (grid.containsKey(testPoint))
-                        numNeighbors ++;
-                    else if (!emptyCheck && !checkedEmptyNeighbors.contains(testPoint))
-                        curEmptyNeighbors.add(testPoint);
-                }
-            }
-        }
-        return numNeighbors;
-    }
-    
-    Color genRandColor() {
-        int r = (int) (Math.random() * 200);
-        int g = (int) (Math.random() * 200);
-        int b = (int) (Math.random() * 200);
-        return new Color(r, g, b);
-    }
-    
+    }    
     private void pan(MouseEvent e) {
         if (!centeringCursor) {
             if (prevMouseX != -1) {
