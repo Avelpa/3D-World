@@ -14,8 +14,15 @@ import MyVector.MyVector;
 public class Spectator {
     private Camera camera;
     
-    private double speed = 0.0;
+    private double accel = 0.0;
+    private MyVector acceleration = MyVector.ZERO;
+    
+    private double maxVel = 0.0;
+    private MyVector velocity = MyVector.ZERO;
+    
     private double lookDegrees = 0.0;
+    
+    private boolean moving = false;
     
     public Spectator(MyVector position, MyVector YawPitchRoll, Camera camera) {
         this.camera = camera;
@@ -25,11 +32,56 @@ public class Spectator {
         this.camera.rotateVertically(YawPitchRoll.y);
     }
     
-    public void setSpeed(double speed) {
-        this.speed = speed;
+    public void setAccel(double accel) {
+        this.accel = accel;
+    }
+    public void setMaxVel(double maxVel) {
+        this.maxVel = maxVel;
     }
     public void setLookDegrees(double degrees) {
         this.lookDegrees = degrees;
+    }
+    
+    public void move() {
+        this.velocity = this.velocity.add(this.acceleration);
+        if (velocity.length() > maxVel) {
+            velocity = velocity.unit().mult(maxVel);
+        }
+        this.camera.moveBy(this.velocity);
+        
+        if (!moving)
+            this.acceleration = this.velocity.unit().mult(-accel);
+        moving = false;
+    }
+    
+    public void moveForward() {
+        this.acceleration = this.camera.getNormal().unit().mult(this.accel);
+        moving = true;
+    }
+    public void moveBackward() {
+        this.acceleration = this.camera.getNormal().unit().mult(-this.accel);
+        moving = true;
+    }
+    public void moveLeft() {
+        this.acceleration = this.camera.getX2D().unit().mult(-this.accel);
+        moving = true;
+    }
+    public void moveRight() {
+        this.acceleration = this.camera.getX2D().unit().mult(this.accel);
+        moving = true;
+    }
+    public void moveDown() {
+        this.acceleration = this.camera.getY2D().unit().mult(-this.accel);
+        moving = true;
+    }
+    public void moveUp() {
+        this.acceleration = this.camera.getY2D().unit().mult(this.accel);
+        moving = true;
+    }
+    
+    /*
+    public void setSpeed(double speed) {
+        this.speed = speed;
     }
     
     public void moveForward() {
@@ -47,6 +99,9 @@ public class Spectator {
     public void moveDown() {
         this.camera.moveBy(MyVector.Z.mult(-this.speed));
     }
+    public void moveUp() {
+        this.camera.moveBy(MyVector.Z.mult(this.speed));
+    }*/
     
     public void lookLeft(int pixels) {
         this.camera.rotateAroundRelativeAxis(MyVector.Z, pixels * this.lookDegrees);

@@ -28,11 +28,14 @@ public class MyVector {
         return new MyVector(this.x*factor, this.y*factor, this.z*factor);
     }
     
-    public MyVector add(int x, int y, int z) {
-        return add(new MyVector(x, y, z));
+    public MyVector add(double x, double y, double z) {
+        return this.add(new MyVector(x, y, z));
     }
     public MyVector add(MyVector other) {
         return new MyVector(this.x + other.x, this.y + other.y, this.z + other.z);
+    }
+    public MyVector sub(double x, double y, double z) {
+        return this.sub(new MyVector(x, y, z));
     }
     public MyVector sub(MyVector other) {
         return new MyVector(this.x - other.x, this.y - other.y, this.z - other.z);
@@ -76,5 +79,26 @@ public class MyVector {
     @Override
     public String toString() {
         return "(" + x + "," + y + "," + z +")";
+    }
+    
+    @Override 
+    public boolean equals (Object object) {
+        if (object == null || object.getClass() != this.getClass()) {
+            return false;
+        }
+        MyVector vector = (MyVector) object;
+        if (this.x == vector.x && this.y == vector.y && this.z == vector.z) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 11 * hash + (int) (Double.doubleToLongBits(this.x) ^ (Double.doubleToLongBits(this.x) >>> 32));
+        hash = 11 * hash + (int) (Double.doubleToLongBits(this.y) ^ (Double.doubleToLongBits(this.y) >>> 32));
+        hash = 11 * hash + (int) (Double.doubleToLongBits(this.z) ^ (Double.doubleToLongBits(this.z) >>> 32));
+        return hash;
     }
 }

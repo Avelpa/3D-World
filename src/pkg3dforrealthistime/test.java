@@ -62,5 +62,7 @@ public class test {
         System.out.println("proj point len: " + projPoint.length());
         System.out.println("proj angle: " + MyVector.angleBetween(projPoint, referenceProj));
 */
+        
+        System.out.println(0.5 % 1);
     }
 }

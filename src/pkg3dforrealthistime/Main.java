@@ -19,8 +19,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -36,19 +36,23 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     private final int WIDTH = 800, HEIGHT = 800;
     private final int PPM = 100;
     
-    ArrayList<MyVector> points = new ArrayList();
+    private HashMap<MyVector, Color> grid = new HashMap();
+    double gridDist = 2; // maybe make final
+    MyVector potentialPoint = null;
     
     Spectator player;
     
     boolean mouseDown = false;
-    HashMap<Character, Boolean> WASD;
+    HashMap<Integer, Boolean> keys;
     
     int prevMouseX = -1;
     int prevMouseY = -1;
     private Robot robot;
     boolean centeringCursor = false;
     private Cursor invisibleCursor;
+    
     boolean playerActive = false;
+    boolean running = false;
     
     public Main() {
         frame = new JFrame("3D");
@@ -71,24 +75,26 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             Toolkit.getDefaultToolkit().getImage(""),
             new Point(0, 0),
             "invisible");
-        WASD = new HashMap();
-        WASD.put('w', false);
-        WASD.put('a', false);
-        WASD.put('s', false);
-        WASD.put('d', false);
-        WASD.put('1', false);
+        keys = new HashMap();
+        keys.put(KeyEvent.VK_W, false);
+        keys.put(KeyEvent.VK_A, false);
+        keys.put(KeyEvent.VK_S, false);
+        keys.put(KeyEvent.VK_D, false);
+        keys.put(KeyEvent.VK_CAPS_LOCK, false);
+        keys.put(KeyEvent.VK_SPACE, false);
         
         player = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
-        player.setSpeed(0.1);
+        player.setAccel(0.0005);
+        player.setMaxVel(0.4);
         player.setLookDegrees(0.2);
         
-        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
-           for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
-               for (int h = -2; h <= 2; h ++) {
-                   points.add(new MyVector(h, i, j));
-               }
-           }
-       }
+//        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
+//            for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
+//                for (int h = -2; h <= 2; h ++) {
+//                    points.add(new MyVector(h, i, j));
+//                }
+//            }
+//        }
     }
     /**
      * @param args the command line arguments
@@ -102,12 +108,26 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     public void paintComponent(Graphics g) {
         
         g.clearRect(0, 0, WIDTH, HEIGHT);
-        g.setColor(Color.DARK_GRAY);
-        for (int i = 0; i < points.size(); i ++) {
-            MyVector camProj = player.getCamera().getProjection(points.get(i), WIDTH, HEIGHT);
+//        g.setColor(new Color(0f, 0.9f, 0f, 0.2f));
+        for (MyVector point: grid.keySet()) {
+            g.setColor(grid.get(point));
+            MyVector camProj = player.getCamera().getProjection(point, WIDTH, HEIGHT);
             if (camProj == null)
                 continue;
-            g.fillOval((int)(camProj.x-5), (int)(camProj.y-5), 11, 11);
+            g.fillOval((int)(camProj.x-20), (int)(camProj.y-20), 41, 41);
+        }
+        
+        if (potentialPoint != null && !running) {
+            g.setColor(Color.BLACK);
+            MyVector potScrn = player.getCamera().getProjection(potentialPoint, WIDTH, HEIGHT);
+            if (potScrn != null) {
+                g.drawOval((int)(potScrn.x - 5), (int)(potScrn.y - 5), 10, 10);
+            }
+        }
+        
+        if (!running) {
+            g.setColor(Color.RED);
+            g.drawRect(0, 0, WIDTH-1, HEIGHT-1);
         }
         
         /* 2 CAMERA SET-UP
@@ -170,80 +190,67 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     }
     
     int counter = 0;
-    int interval = 5 * 60;
     public void run() {
         while (true) {
             
-            if (mouseDown && this.getMousePosition() != null) {
-                points.add(player.getCamera().getPos().add(player.getCamera().getNormal().unit()));
-            }
-            
             if (playerActive) {
-                for (Character key: WASD.keySet()) {
-                    if (WASD.get(key) == true) {
+                
+                player.move();
+                
+                if (!running) {
+                    MyVector newPoint = player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(3));
+                    double newX = newPoint.x % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.x / gridDist) * gridDist : Math.floor(newPoint.x / gridDist) * gridDist;
+                    double newY = newPoint.y % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.y / gridDist) * gridDist : Math.floor(newPoint.y / gridDist) * gridDist;
+                    double newZ = newPoint.z % gridDist >= (gridDist / 2) ? Math.ceil(newPoint.z / gridDist) * gridDist : Math.floor(newPoint.z / gridDist) * gridDist;
+                    potentialPoint = new MyVector(newX, newY, newZ);
+
+                    if (mouseDown && this.getMousePosition() != null) {
+                        if (!grid.containsKey(potentialPoint)) {
+                            grid.put(potentialPoint, genRandColor());
+                        }
+                    }
+                } else {
+                    counter ++;
+                    if (counter % 60 == 0)
+                        runLife();
+                }
+                
+                for (Integer key: keys.keySet()) {
+                    if (keys.get(key) == true) {
                         switch (key) {
-                            case 'w':
+                            case KeyEvent.VK_W:
                                 player.moveForward();
                                 break;
-                            case 's':
+                            case KeyEvent.VK_S:
                                 player.moveBackward();
                                 break;
-                            case 'a':
+                            case KeyEvent.VK_A:
                                 player.moveLeft();
                                 break;
-                            case 'd':
+                            case KeyEvent.VK_D:
                                 player.moveRight();
                                 break;
-                            case '1':
+                            case KeyEvent.VK_CAPS_LOCK:
                                 player.moveDown();
+                                break;
+                            case KeyEvent.VK_SPACE:
+                                player.moveUp();
+                                break;
+                        }
+                    }
+                }
+            } else {
+                for (Integer key: keys.keySet()) {
+                    if (keys.get(key) == true) {
+                        switch (key) {
+                            case KeyEvent.VK_S:
+                                running = !running;
+                                keys.put(KeyEvent.VK_S, false);
                                 break;
                         }
                     }
                 }
             }
-            
-            /* demo cycle
-            
-            counter ++;
-
-            if (counter % (interval) == 0) {
-                camera.reset();
-                camera.moveTo(10, 0, 0);
-            }
-            switch (counter / (interval)) {
-                case 0:
-                    camera.moveBy(-0.01, 0, 0);
-                    break;
-                case 1:
-                    camera.moveBy(0.01, 0, 0);
-                    break;
-                case 2:
-                    camera.moveBy(0, -0.01, 0);
-                    break;
-                case 3:
-                    camera.moveBy(0, 0.01, 0);
-                    break;
-                case 4:
-                    camera.moveBy(0, 0, -0.01);
-                    break;
-                case 5:
-                    camera.moveBy(0, 0, 0.01);
-                    break;
-                case 6:
-                    camera.rotateHorizontally(0.04);
-                    break;
-                case 7:
-                    camera.rotateHorizontally(-0.04);
-                    break;
-                case 8:
-                    camera.rotateVertically(0.04);
-                    break;
-                case 9:
-                    camera.rotateVertically(-0.04);
-                    break;
-            }
-            */
-//            System.out.println(camera);
             
             repaint();
             try {
@@ -252,6 +259,59 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+    
+    HashSet<MyVector> curEmptyNeighbors = new HashSet();
+    HashSet<MyVector> checkedEmptyNeighbors = new HashSet();
+    void runLife() {
+        HashMap<MyVector, Color> toAdd = new HashMap();
+        HashSet<MyVector> toDelete = new HashSet();
+        
+        for (MyVector point: grid.keySet()) {
+            int numNeighbors = getNumNeighbors(point, false);
+            if (numNeighbors < 2 || numNeighbors > 3) {
+                toDelete.add(point);
+            }
+            for (MyVector empty : curEmptyNeighbors) {
+                
+                numNeighbors = getNumNeighbors(empty, true);
+                if (numNeighbors == 3)
+                    toAdd.put(empty, genRandColor());
+                
+                checkedEmptyNeighbors.add(empty);
+            }
+            curEmptyNeighbors.clear();
+        }
+        for (MyVector del: toDelete) {
+            grid.remove(del);
+        }
+        grid.putAll(toAdd);
+        checkedEmptyNeighbors.clear();
+    }
+    int getNumNeighbors(MyVector point, boolean emptyCheck) {
+        int numNeighbors = 0;
+        for (double x = point.x + gridDist; x >= point.x - gridDist; x -= gridDist) {
+            for (double z = point.z + gridDist; z >= point.z - gridDist; z -= gridDist) {
+                for (double y = point.y - gridDist; y <= point.y + gridDist; y += gridDist) {
+                    if (x == point.x && y == point.y && z == point.z)
+                        continue;
+                    
+                    MyVector testPoint = new MyVector(x, y, z);
+                    if (grid.containsKey(testPoint))
+                        numNeighbors ++;
+                    else if (!emptyCheck && !checkedEmptyNeighbors.contains(testPoint))
+                        curEmptyNeighbors.add(testPoint);
+                }
+            }
+        }
+        return numNeighbors;
+    }
+    
+    Color genRandColor() {
+        int r = (int) (Math.random() * 200);
+        int g = (int) (Math.random() * 200);
+        int b = (int) (Math.random() * 200);
+        return new Color(r, g, b);
     }
     
     private void pan(MouseEvent e) {
@@ -289,14 +349,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     @Override
     public void keyPressed(KeyEvent e) {
         
-        /* -- for demo cycle
-        if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-            counter /= interval;
-            counter *= interval;
-            counter += interval - 1;
-            return;
-        }*/
-        
         if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
             playerActive = !playerActive;
             if (playerActive) {
@@ -308,13 +360,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             }
         }
         
-        char keyChar = Character.toLowerCase(e.getKeyChar());
-        if (WASD.containsKey(keyChar)) {
-            WASD.put(keyChar, true);
-        } else {
-            if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK) {
-                WASD.put('1', true);
-            }
+        if (keys.containsKey(e.getKeyCode())) {
+            keys.put(e.getKeyCode(), true);
         }
         
     }
@@ -322,12 +369,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     @Override
     public void keyReleased(KeyEvent e) {
         char keyChar = Character.toLowerCase(e.getKeyChar());
-        if (WASD.containsKey(keyChar)) {
-            WASD.put(keyChar, false);
-        } else {
-            if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK) {
-                WASD.put('1', false);
-            }
+        if (keys.containsKey(e.getKeyCode())) {
+            keys.put(e.getKeyCode(), false);
         }
     }
 
