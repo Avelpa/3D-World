@@ -340,10 +340,11 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                     boolean cleanNode = false;
                                     for (Point3D neighbor: top.getNeighbours()) {
                                         if (neighbor != end) {
-                                            if (neighbor.partOfSurface(newSurface) && doneLoop) {
-                                                cleanNode = true;
+                                            if (neighbor.partOfSurface(newSurface)) {
+                                                if (doneLoop)
+                                                    cleanNode = true;
+                                                stack.add(neighbor); // this might be better to put up in the if doneLoop block
                                             }
-                                            stack.add(neighbor);
                                         } else {
                                             cleanNode = true;
                                         }
@@ -353,8 +354,14 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                         top.remSurface(newSurface);
                                     }
                                 }
+                                if (!doneLoop) {
+                                    newSurface = null;
+                                    break;
+                                }
                             }
-                            System.out.println("NULLIFY");
+                            //////////////////////////////////////
+                            // ADD NEW SURFACE TO COLLECTION HERE!!
+                            //////////////////////////////////////
                             start = null;
                         } else {
                             start = end;
