@@ -21,6 +21,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.HashMap;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -105,6 +106,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         Main main = new Main();
         main.run();
     }
+    
+    final int OVAL_SIZE = 40;
 
     @Override
     public void paintComponent(Graphics g) {
@@ -121,8 +124,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     g.setColor(Color.ORANGE);
                 else
                     g.setColor(Color.DARK_GRAY);
-                double ovalSize = player.getCamera().getPerspective(point, 41);
-                g.fillOval((int) (pointProj.coords.x - ovalSize / 2), (int) (pointProj.coords.y - ovalSize / 2), (int) ovalSize, (int) ovalSize);
+                g.fillOval((int) (pointProj.coords.x - OVAL_SIZE / 2), (int) (pointProj.coords.y - OVAL_SIZE / 2), (int) OVAL_SIZE, (int) OVAL_SIZE);
             }
             
             g.setColor(Color.DARK_GRAY);
@@ -137,17 +139,16 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         
         g.setColor(Color.GREEN);
         if (start != null) {
-            double ovalSize = player.getCamera().getPerspective(start, 41);
             Projection proj = points.get(start);
             if (proj.inRange) {
-                g.fillOval((int) (proj.coords.x - ovalSize / 2), (int) (proj.coords.y - ovalSize / 2), (int) ovalSize, (int) ovalSize);
+                g.fillOval((int) (proj.coords.x - OVAL_SIZE / 2), (int) (proj.coords.y - OVAL_SIZE / 2), (int) OVAL_SIZE, (int) OVAL_SIZE);
             }
         }
         if (end != null) {
             Projection proj = points.get(end);
             if (proj.inRange) {
                 double ovalSize = player.getCamera().getPerspective(end, 41);
-                g.fillOval((int) (proj.coords.x - ovalSize / 2), (int) (proj.coords.y - ovalSize / 2), (int) ovalSize, (int) ovalSize);
+                g.fillOval((int) (proj.coords.x - OVAL_SIZE / 2), (int) (proj.coords.y - OVAL_SIZE / 2), (int) OVAL_SIZE, (int) OVAL_SIZE);
             }
         }
         
@@ -252,38 +253,115 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     }
                 }
                 
-                if (mouseDown) {
-                    if (start == null) {
-                        start = new Point3D(spawnVector());
-                        points.put(start, null);
-                    } else {
-                        end = new Point3D(spawnVector());
-                        points.put(end, null);
-
-                        start.linkTo(end);
-                        end.linkTo(start);
-
-                        start = end;
-                        end = null;
-                    }
-                    mouseDown = false;
-                }
-
                 cursorPoint = spawnVector();
                 Projection cursorProj = player.lookAt(cursorPoint, WIDTH, HEIGHT);
 
                 player.lookAt(points, WIDTH, HEIGHT);
-
-                double closestDist = Float.MAX_VALUE;
+                
                 selected = null;
-                for (Point3D point: points.keySet()) {
-                    if (points.get(point).inRange && point != start) {
-                        double dist = points.get(point).coords.sub(cursorProj.coords).length();
-                        if (dist <= 100) {
-                            closestDist = dist;
-                            selected = point;
+                if (start != null) {
+                    double closestDist = Float.MAX_VALUE;
+                    for (Point3D point: points.keySet()) {
+                        if (points.get(point).inRange && point != start) {
+                            double dist = points.get(point).coords.sub(cursorProj.coords).length();
+                            if (dist <= OVAL_SIZE) {
+                                closestDist = dist;
+                                selected = point;
+                            }
                         }
                     }
+                }
+                
+                if (mouseDown) {
+                    if (start == null) {
+                        start = new Point3D(spawnVector());
+                        points.put(start, player.lookAt(start, WIDTH, HEIGHT));
+                    } else {
+                        boolean closed = false;
+                        if (selected != null) {
+                            end = selected;
+                            if (end.hasSurface()) {
+                                Point3D temp = end;
+                                end = start;
+                                start = temp;
+                            }
+                            closed = true;
+                        } else {
+                            end = new Point3D(spawnVector());
+                            points.put(end, player.lookAt(end, WIDTH, HEIGHT));
+                        }
+
+                        start.linkTo(end);
+
+                        if (closed) {
+                            Surface newSurface = new Surface(end);
+                            Point3D head = end;
+                            
+                            Stack<Point3D> stack = new Stack();
+                            stack.push(head);
+                            Point3D top = null;
+                            boolean doneLoop = false;
+                            while (!stack.isEmpty() && !doneLoop) {
+                                System.out.println("loop1");
+                                top = stack.pop();
+                                top.addSurface(newSurface);
+                                
+                                if (top.getNeighbours().isEmpty()) {
+                                    top.remSurface(newSurface);
+                                }
+                                for (Point3D neighbor: top.getNeighbours()) {
+                                    if (neighbor == end) {
+                                        doneLoop = true;
+                                        break;
+                                    }
+                                    if (!neighbor.partOfSurface(newSurface)) {
+                                        stack.add(neighbor);
+                                        neighbor.addSurface(newSurface);
+                                    }
+                                }
+                            }
+                            while (!stack.isEmpty()) {
+                                System.out.println("loop2");
+                                top = stack.pop();
+                                top.remSurface(newSurface);
+                            }
+                            
+                            boolean dirty = true;
+                            while (dirty) {
+                                System.out.println("loop3");
+                                dirty = false;
+                                head = end;
+                                
+                                stack.push(head);
+                                while (!stack.isEmpty()) {
+                                    System.out.println("loop4");
+                                    top = stack.pop();
+
+                                    boolean cleanNode = false;
+                                    for (Point3D neighbor: top.getNeighbours()) {
+                                        if (neighbor != end) {
+                                            if (neighbor.partOfSurface(newSurface) && doneLoop) {
+                                                cleanNode = true;
+                                            }
+                                            stack.add(neighbor);
+                                        } else {
+                                            cleanNode = true;
+                                        }
+                                    }
+                                    if (!cleanNode) {
+                                        dirty = true;
+                                        top.remSurface(newSurface);
+                                    }
+                                }
+                            }
+                            System.out.println("NULLIFY");
+                            start = null;
+                        } else {
+                            start = end;
+                        }
+                    }
+                    end = null;
+                    mouseDown = false;
                 }
             }
                 
@@ -300,10 +378,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         return player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(4));
     }
 
-    private void pan(MouseEvent e) {
+    private void pan(int x, int y) {
         if (!centeringCursor) {
             if (prevMouseX != -1) {
-                int pixels = e.getX() - prevMouseX;
+                int pixels = x - prevMouseX;
                 if (pixels < 0) {
                     player.lookLeft(-pixels);
                 } else {
@@ -311,7 +389,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 }
             }
             if (prevMouseY != -1) {
-                int pixels = e.getY() - prevMouseY;
+                int pixels = y - prevMouseY;
                 if (pixels < 0) {
                     player.lookUp(-pixels);
                 } else {
@@ -324,8 +402,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             centeringCursor = false;
         }
 
-        prevMouseX = e.getX();
-        prevMouseY = e.getY();
+        prevMouseX = x;
+        prevMouseY = y;
     }
 
     @Override
@@ -387,14 +465,14 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     public void mouseDragged(MouseEvent e) {
 //        mouseDown = true;
         if (playerActive) {
-            pan(e);
+            pan(e.getX(), e.getY());
         }
     }
 
     @Override
     public void mouseMoved(MouseEvent e) {
         if (playerActive) {
-            pan(e);
+            pan(e.getX(), e.getY());
         }
     }
 
