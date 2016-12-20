@@ -59,8 +59,12 @@ public class Spectator {
         }
         this.camera.moveBy(this.velocity);
         
-        if (!moving)
-            this.acceleration = this.velocity.unit().mult(-accel);
+        if (!moving) {
+            if (this.velocity.length() < accel)
+                this.velocity = MyVector.ZERO;
+            else 
+                this.acceleration = this.velocity.unit().mult(-accel);
+        }
         moving = false;
     }
     

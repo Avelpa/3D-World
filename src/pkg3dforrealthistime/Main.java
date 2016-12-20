@@ -86,9 +86,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_SPACE, false);
 
         player = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
-        player.setAccel(0.0005);
-        player.setMaxVel(0.4);
-        player.setLookDegrees(0.2);
+        player.setAccel(0.002);
+        player.setMaxVel(0.05);
+        player.setLookDegrees(0.12);
 
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
 //            for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
@@ -280,11 +280,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         boolean closed = false;
                         if (selected != null) {
                             end = selected;
-                            if (end.hasSurface()) {
-                                Point3D temp = end;
-                                end = start;
-                                start = temp;
-                            }
                             closed = true;
                         } else {
                             end = new Point3D(spawnVector());
@@ -302,7 +297,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             Point3D top = null;
                             boolean doneLoop = false;
                             while (!stack.isEmpty() && !doneLoop) {
-                                System.out.println("loop1");
                                 top = stack.pop();
                                 top.addSurface(newSurface);
                                 
@@ -321,20 +315,17 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                 }
                             }
                             while (!stack.isEmpty()) {
-                                System.out.println("loop2");
                                 top = stack.pop();
                                 top.remSurface(newSurface);
                             }
                             
                             boolean dirty = true;
                             while (dirty) {
-                                System.out.println("loop3");
                                 dirty = false;
                                 head = end;
                                 
                                 stack.push(head);
                                 while (!stack.isEmpty()) {
-                                    System.out.println("loop4");
                                     top = stack.pop();
 
                                     boolean cleanNode = false;
@@ -362,10 +353,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             //////////////////////////////////////
                             // ADD NEW SURFACE TO COLLECTION HERE!!
                             //////////////////////////////////////
-                            start = null;
-                        } else {
-                            start = end;
+//                            start = null;
                         }
+                        start = end;
                     }
                     end = null;
                     mouseDown = false;
