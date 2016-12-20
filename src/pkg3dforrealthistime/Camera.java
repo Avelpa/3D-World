@@ -166,6 +166,12 @@ public class Camera {
         return new MyVector(x, y, 0);
     }
     
+    public double getPerspective(MyVector subject, double size){
+        double distance = subject.sub(this.position).length();
+        
+        return size*(15/distance);
+    }
+    
     @Override
     public String toString() {
         return "pos: " + position + " x2D " + x2D + " y2D " + y2D + " normal: " + normal;

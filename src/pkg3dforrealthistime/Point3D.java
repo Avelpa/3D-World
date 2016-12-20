@@ -13,11 +13,11 @@ import java.util.HashSet;
  * @author Dmitry
  */
 public class Point3D extends MyVector{
-    HashSet<Point3D> neighbors;
+    HashSet<Point3D> neighbours;
     
     public Point3D(double x, double y, double z) {
         super(x, y, z);
-        neighbors = new HashSet();
+        neighbours = new HashSet();
     }
     public Point3D(MyVector point) {
         this (point.x, point.y, point.z);
@@ -29,11 +29,11 @@ public class Point3D extends MyVector{
             return;
         }
         
-        this.neighbors.add(other);
+        this.neighbours.add(other);
     }
     
-    public HashSet<Point3D> getNeighbors() {
-        return this.neighbors;
+    public HashSet<Point3D> getNeighbours() {
+        return this.neighbours;
     }
 
 }
