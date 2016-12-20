@@ -2,6 +2,7 @@
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
+ *
  */
 package pkg3dforrealthistime;
 
@@ -21,6 +22,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -36,10 +38,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     private final int WIDTH = 1366, HEIGHT = 720;
     private final int PPM = 100;
     
-    ArrayList<MyVector> points = new ArrayList();
+    HashSet<Point3D> points = new HashSet();
     
     Spectator player = null;
     
+    MyVector cursorPoint = null;
+    Point3D start = null;
+    Point3D end = null;
     boolean mouseDown = false;
     HashMap<Integer, Boolean> keys;
     
@@ -106,18 +111,57 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         g.clearRect(0, 0, WIDTH, HEIGHT);
 //        g.setColor(new Color(0f, 0.9f, 0f, 0.2f));
 
-        // player 1:
+        HashMap<MyVector, MyVector> pointProjPairs = new HashMap();
+        MyVector pointProj = null;
         g.setColor(Color.DARK_GRAY);
-        for (MyVector point: points) {
-            MyVector camProj = player.getCamera().getProjection(point, WIDTH, HEIGHT);
-            if (camProj == null)
+        for (Point3D point: points) { // need to change null return val
+            if (!pointProjPairs.containsKey(point)) {
+                pointProjPairs.put(point, player.getCamera().getProjection(point, WIDTH, HEIGHT));
+            }
+            
+            pointProj = pointProjPairs.get(point);
+            if (pointProj == null)
                 continue;
-            g.fillOval((int)(camProj.x-20), (int)(camProj.y-20), 41, 41);
+            
+            g.fillOval((int)(pointProj.x-20), (int)(pointProj.y-20), 41, 41);
+            
+            MyVector neighborProj = null;
+            for (Point3D neighbor: point.getNeighbors()) {
+                if (!pointProjPairs.containsKey(neighbor)) {
+                    pointProjPairs.put(neighbor, player.getCamera().getProjection(neighbor, WIDTH, HEIGHT));
+                }
+                neighborProj = pointProjPairs.get(neighbor);
+                
+                if (pointProjPairs.get(neighbor) != null) {
+                    g.drawLine((int)(pointProj.x), (int)(pointProj.y), (int)(neighborProj.x), (int)(neighborProj.y));
+                }
+            }
+            
+            
+            
         }
+        
+        g.setColor(Color.GREEN);
+        if (start != null) {
+            MyVector proj = player.getCamera().getProjection(start, WIDTH, HEIGHT);
+            if (proj != null) {
+                g.fillOval((int)(proj.x-20), (int)(proj.y-20), 41, 41);
+            }
+        }
+        if (end != null) {
+            MyVector proj = player.getCamera().getProjection(end, WIDTH, HEIGHT);
+            if (proj != null) {
+                g.fillOval((int)(proj.x-20), (int)(proj.y-20), 40, 40);
+            }
+        }
+            
         
         if (!playerActive) {
             g.setColor(Color.RED);
             g.drawRect(0, 0, WIDTH-1, HEIGHT-1);
+        } else {
+            g.setColor(Color.BLACK);
+            g.drawOval((int)(WIDTH / 2 - 20), (int)(HEIGHT / 2 - 20), 40, 40);
         }
         
         /* 2 CAMERA SET-UP
@@ -185,9 +229,23 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             
             if (playerActive) {
                 
+                cursorPoint = spawnVector();
+                
                 if (mouseDown) {
-                    MyVector newPoint = player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(4));
-                    points.add(newPoint);
+                    if (start == null) {
+                        start = new Point3D(spawnVector());
+                    } else {
+                        end = new Point3D(spawnVector());
+                        start.linkTo(end);
+                        end.linkTo(start);
+                        
+                        points.add(start);
+                        points.add(end);
+                        
+                        start = end;
+                        end = null;
+                    }
+                    mouseDown = false;
                 }
                 
                 player.move();
@@ -226,6 +284,11 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             }
         }
     }    
+    
+    public MyVector spawnVector() {
+        return player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(4));
+    }
+    
     private void pan(MouseEvent e) {
         if (!centeringCursor) {
             if (prevMouseX != -1) {
@@ -311,7 +374,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        mouseDown = true;
+//        mouseDown = true;
         if (playerActive) {
             pan(e);
         }

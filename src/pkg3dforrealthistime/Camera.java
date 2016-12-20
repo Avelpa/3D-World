@@ -66,7 +66,7 @@ public class Camera {
         
         double aspectRatio = (double)SCR_WIDTH / SCR_HEIGHT;
         double horFovRad = Math.toRadians(this.FOV);
-        double vertFovRad = horFovRad/aspectRatio;
+        double vertFovRad = horFovRad / aspectRatio;
         
         MyVector relSubj = subject.sub(this.position);
         
@@ -88,7 +88,7 @@ public class Camera {
         MyVector projNZ = relSubj.projectOntoPlane(this.x2D, MyVector.ZERO);
         
         double nzAngle = MyVector.angleBetween(projNZ, this.normal);
-        if (nzAngle > this.FOV / 2)
+        if (nzAngle > this.FOV / aspectRatio / 2)
             return null;
         
         MyVector vertVec = projNZ.sub(extendedNormal);
