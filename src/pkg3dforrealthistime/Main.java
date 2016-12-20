@@ -20,9 +20,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
@@ -38,11 +36,12 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     private final int WIDTH = 1366, HEIGHT = 720;
     private final int PPM = 100;
 
-    HashSet<Point3D> points = new HashSet();
+    HashMap<Point3D, Projection> points = new HashMap();
 
     Spectator player = null;
 
     MyVector cursorPoint = null;
+    Point3D selected = null;
     Point3D start = null;
     Point3D end = null;
     boolean mouseDown = false;
@@ -112,55 +111,46 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         g.clearRect(0, 0, WIDTH, HEIGHT);
 //        g.setColor(new Color(0f, 0.9f, 0f, 0.2f));
 
-        HashMap<MyVector, MyVector> pointProjPairs = new HashMap();
-        MyVector pointProj = null;
-        g.setColor(Color.DARK_GRAY);
-        for (Point3D point : points) { // need to change null return val
-            if (!pointProjPairs.containsKey(point)) {
-                pointProjPairs.put(point, player.getCamera().getProjection(point, WIDTH, HEIGHT));
+        Projection pointProj = null;
+        for (Point3D point : points.keySet()) { // need to change null return val
+            
+            pointProj = points.get(point);
+
+            if (pointProj.inRange) {
+                if (point.equals(selected))
+                    g.setColor(Color.ORANGE);
+                else
+                    g.setColor(Color.DARK_GRAY);
+                double ovalSize = player.getCamera().getPerspective(point, 41);
+                g.fillOval((int) (pointProj.coords.x - ovalSize / 2), (int) (pointProj.coords.y - ovalSize / 2), (int) ovalSize, (int) ovalSize);
             }
-
-            pointProj = pointProjPairs.get(point);
-            if (pointProj == null) {
-                continue;
-            }
-
-            double ovalSize = player.getCamera().getPerspective(point, 41);
-
-            g.fillOval((int) (pointProj.x - ovalSize / 2), (int) (pointProj.y - ovalSize / 2), (int) ovalSize, (int) ovalSize);
-
-            MyVector neighborProj = null;
+            
+            g.setColor(Color.DARK_GRAY);
+            Projection neighborProj = null;
             for (Point3D neighbor : point.getNeighbours()) {
-                if (!pointProjPairs.containsKey(neighbor)) {
-                    pointProjPairs.put(neighbor, player.getCamera().getProjection(neighbor, WIDTH, HEIGHT));
-                }
-                neighborProj = pointProjPairs.get(neighbor);
-
-                if (pointProjPairs.get(neighbor) != null) {
-                    g.drawLine((int) (pointProj.x), (int) (pointProj.y), (int) (neighborProj.x), (int) (neighborProj.y));
+                neighborProj = points.get(neighbor);
+                if (neighborProj.inFront || pointProj.inFront) {
+                    g.drawLine((int) (pointProj.coords.x), (int) (pointProj.coords.y), (int) (neighborProj.coords.x), (int) (neighborProj.coords.y));
                 }
             }
-
         }
-
         
-
         g.setColor(Color.GREEN);
         if (start != null) {
             double ovalSize = player.getCamera().getPerspective(start, 41);
-            MyVector proj = player.getCamera().getProjection(start, WIDTH, HEIGHT);
-            if (proj != null) {
-                g.fillOval((int) (proj.x - ovalSize / 2), (int) (proj.y - ovalSize / 2), (int) ovalSize, (int) ovalSize);
+            Projection proj = points.get(start);
+            if (proj.inRange) {
+                g.fillOval((int) (proj.coords.x - ovalSize / 2), (int) (proj.coords.y - ovalSize / 2), (int) ovalSize, (int) ovalSize);
             }
         }
         if (end != null) {
-            MyVector proj = player.getCamera().getProjection(end, WIDTH, HEIGHT);
-            if (proj != null) {
+            Projection proj = points.get(end);
+            if (proj.inRange) {
                 double ovalSize = player.getCamera().getPerspective(end, 41);
-                g.fillOval((int) (proj.x - ovalSize / 2), (int) (proj.y - ovalSize / 2), (int) ovalSize, (int) ovalSize);
+                g.fillOval((int) (proj.coords.x - ovalSize / 2), (int) (proj.coords.y - ovalSize / 2), (int) ovalSize, (int) ovalSize);
             }
         }
-
+        
         if (!playerActive) {
             g.setColor(Color.RED);
             g.drawRect(0, 0, WIDTH - 1, HEIGHT - 1);
@@ -235,25 +225,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
             if (playerActive) {
 
-                cursorPoint = spawnVector();
-
-                if (mouseDown) {
-                    if (start == null) {
-                        start = new Point3D(spawnVector());
-                    } else {
-                        end = new Point3D(spawnVector());
-                        start.linkTo(end);
-                        end.linkTo(start);
-
-                        points.add(start);
-                        points.add(end);
-
-                        start = end;
-                        end = null;
-                    }
-                    mouseDown = false;
-                }
-
                 player.move();
 
                 for (Integer key : keys.keySet()) {
@@ -280,8 +251,42 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         }
                     }
                 }
-            }
+                
+                if (mouseDown) {
+                    if (start == null) {
+                        start = new Point3D(spawnVector());
+                        points.put(start, null);
+                    } else {
+                        end = new Point3D(spawnVector());
+                        points.put(end, null);
 
+                        start.linkTo(end);
+                        end.linkTo(start);
+
+                        start = end;
+                        end = null;
+                    }
+                    mouseDown = false;
+                }
+
+                cursorPoint = spawnVector();
+                Projection cursorProj = player.lookAt(cursorPoint, WIDTH, HEIGHT);
+
+                player.lookAt(points, WIDTH, HEIGHT);
+
+                double closestDist = Float.MAX_VALUE;
+                selected = null;
+                for (Point3D point: points.keySet()) {
+                    if (points.get(point).inRange && point != start) {
+                        double dist = points.get(point).coords.sub(cursorProj.coords).length();
+                        if (dist <= 100) {
+                            closestDist = dist;
+                            selected = point;
+                        }
+                    }
+                }
+            }
+                
             repaint();
             try {
                 Thread.sleep(1000 / 60);
@@ -290,7 +295,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             }
         }
     }
-
+    
     public MyVector spawnVector() {
         return player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(4));
     }

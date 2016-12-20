@@ -60,7 +60,11 @@ public class Camera {
         this.moveBy(this.normal.unit().mult(-distance));
     }
     
-    public MyVector getProjection(MyVector subject, int SCR_WIDTH, int SCR_HEIGHT) {
+    public Projection getProjection(MyVector subject, int SCR_WIDTH, int SCR_HEIGHT) {
+        
+        Projection ret = new Projection();
+        ret.inRange = true;
+        ret.inFront = true;
         
         MyVector scaledUnit = subject.sub(this.position).unit().mult(this.normal.length());
         
@@ -76,9 +80,12 @@ public class Camera {
         
         MyVector projNY = relSubj.projectOntoPlane(this.y2D, MyVector.ZERO);
         
+        if (projNY.scalarProject(this.normal) < 0)
+            ret.inFront = false;
+        
         double nyAngle = MyVector.angleBetween(projNY, this.normal);
         if (nyAngle > this.FOV / 2)
-            return null;
+            ret.inRange = false;
         
         MyVector horVec = projNY.sub(extendedNormal);
         double horRatio = horVec.length() / horRange;
@@ -89,14 +96,16 @@ public class Camera {
         
         double nzAngle = MyVector.angleBetween(projNZ, this.normal);
         if (nzAngle > this.FOV / aspectRatio / 2)
-            return null;
+            ret.inRange = false;
         
         MyVector vertVec = projNZ.sub(extendedNormal);
         double vertRatio = vertVec.length() / vertRange;
         double vertRatioSign = Math.signum(vertVec.scalarProject(this.y2D));
         vertRatio *= vertRatioSign;
         
-        return cartesianToScreen(new MyVector(0, horRatio * SCR_WIDTH / this.PPM / 2, vertRatio * SCR_HEIGHT / this.PPM / 2), SCR_WIDTH, SCR_HEIGHT);
+        ret.coords = cartesianToScreen(new MyVector(0, horRatio * SCR_WIDTH / this.PPM / 2, vertRatio * SCR_HEIGHT / this.PPM / 2), SCR_WIDTH, SCR_HEIGHT);
+        
+        return ret;
     }
     /* -- old projection that used angle ratio instead of distance ratios
     public MyVector getProjection(MyVector subject, double scrWidth, double scrHeight) {

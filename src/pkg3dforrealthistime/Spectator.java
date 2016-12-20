@@ -6,6 +6,7 @@
 package pkg3dforrealthistime;
 
 import MyVector.MyVector;
+import java.util.HashMap;
 
 /**
  *
@@ -30,6 +31,15 @@ public class Spectator {
         this.camera.moveTo(position);
         this.camera.rotateHorizontally(YawPitchRoll.x);
         this.camera.rotateVertically(YawPitchRoll.y);
+    }
+    
+    public void lookAt(HashMap<Point3D, Projection> points, int SCR_WIDTH, int SCR_HEIGHT) {
+        for (Point3D point: points.keySet()) {
+            points.put(point, this.camera.getProjection(point, SCR_WIDTH, SCR_HEIGHT));
+        }
+    }
+    public Projection lookAt(MyVector point, int SCR_WIDTH, int SCR_HEIGHT) {
+        return this.camera.getProjection(point, SCR_WIDTH, SCR_HEIGHT);
     }
     
     public void setAccel(double accel) {

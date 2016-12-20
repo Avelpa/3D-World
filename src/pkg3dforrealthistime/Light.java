@@ -16,13 +16,13 @@ public class Light {
     
     private MyVector position;
     private double radius;
-    private Color colour;
+    private Color color;
 
     
-    public Light(MyVector position, double radius, Color colour) {
+    public Light(MyVector position, double radius, Color color) {
         this.position = position;
         this.radius = radius;
-        this.colour = colour;
+        this.color = color;
     }
     
     
