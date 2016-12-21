@@ -22,7 +22,6 @@ public class Surface {
     }
 
     //
-    
     public boolean intersects(Point3D point, Point3D start, Point3D end) {
         if (start.y > end.y) {
             intersects(point, end, start);
@@ -52,29 +51,75 @@ public class Surface {
     }
 
     public boolean contains(Point3D point) {
-        LinkedList<Point3D> pointList = this.getSurfaceList();
+        LinkedList<Projection> pointList = this.getProjList();
         int count = 0;
 
         for (int i = 0; i < pointList.size() - 1; i++) {
-            if (intersects(point, pointList.get(i), pointList.get(i + 1))) {
+            if (intersects(point, new Point3D(pointList.get(i).coords),
+                    new Point3D(pointList.get(i + 1).coords))) {
                 count++;
             }
         }
         return count % 2 != 0;
     }
 
-    public LinkedList<Point3D> getSurfaceList() {
-        LinkedList<Point3D> list = new LinkedList();
-        list.add(new Point3D(Main.points.get(this.head).coords));
+    public LinkedList<Projection> getProjList() {
+        LinkedList<Projection> list = new LinkedList();
+        list.add(Main.points.get(this.head));
         Point3D current = this.head;
         ArrayList<Point3D> visited = new ArrayList();
-        visited.add(this.head);
-        
+
         do {
             visited.add(current);
             for (Point3D point : current.getNeighbours()) {
                 if (point.partOfSurface(this)) {
-                    list.add(new Point3D(Main.points.get(point).coords));
+                    list.add(Main.points.get(point));
+                    current = point;
+                    break;
+                }
+            }
+        } while (!visited.contains(current));
+        return list;
+    }
+
+    public ProjRectangle getBoundsProj() {
+        LinkedList<Projection> pointList = this.getProjList();
+
+        Projection xMax = Main.points.get(this.head);
+        Projection yMax = Main.points.get(this.head);
+        Projection xMin = Main.points.get(this.head);
+        Projection yMin = Main.points.get(this.head);
+
+        for (Projection point : pointList) {
+            if (point.coords.x > xMax.coords.x) {
+                xMax = point;
+            } else if (point.coords.x < xMin.coords.x) {
+                xMin = point;
+            }
+            if (point.coords.y > yMax.coords.y) {
+                yMax = point;
+            } else if (point.coords.y < yMin.coords.y) {
+                yMin = point;
+            }
+        }
+
+        double width = xMax.coords.x - xMin.coords.x;
+        double height = yMax.coords.y - yMin.coords.y;
+
+        return new ProjRectangle(xMin, yMin, (int) width, (int) height);
+    }
+
+    public LinkedList<Point3D> getList() {
+        LinkedList<Point3D> list = new LinkedList();
+        list.add(new Point3D(this.head));
+        Point3D current = this.head;
+        ArrayList<Point3D> visited = new ArrayList();
+
+        do {
+            visited.add(current);
+            for (Point3D point : current.getNeighbours()) {
+                if (point.partOfSurface(this)) {
+                    list.add(new Point3D(point));
                     current = point;
                     break;
                 }
@@ -84,7 +129,7 @@ public class Surface {
     }
 
     public Rectangle getBounds() {
-        LinkedList<Point3D> pointList = this.getSurfaceList();
+        LinkedList<Point3D> pointList = this.getList();
 
         double xMax = 0;
         double yMax = 0;
@@ -92,19 +137,23 @@ public class Surface {
         double yMin = 0;
 
         for (Point3D point : pointList) {
-             if(point.x > xMax)
-                 xMax = point.x;
-             else if(point.x < xMin)
-                 xMin = point.x;
-             if(point.y > yMax)
-                 yMax = point.y;
-             if(point.y < yMin)
-                 yMax = point.y;
+            if (point.x > xMax) {
+                xMax = point.x;
+            } else if (point.x < xMin) {
+                xMin = point.x;
+            }
+            if (point.y > yMax) {
+                yMax = point.y;
+            }
+            if (point.y < yMin) {
+                yMax = point.y;
+            }
         }
-        
+
         double width = xMax - xMin;
         double height = yMax - yMin;
-              
-        return new Rectangle((int)xMin, (int)yMin, (int)width, (int)height);
+
+        return new Rectangle((int) xMin, (int) yMin, (int) width, (int) height);
     }
+
 }

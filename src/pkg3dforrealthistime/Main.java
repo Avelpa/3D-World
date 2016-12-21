@@ -166,27 +166,28 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         }
 
         for (Surface surface : surfaces) {
-            Rectangle box = surface.getBounds();
+            ProjRectangle box = surface.getBoundsProj();
             int counter2 = 0;
-            if (box.x < 0) {
-                box.x = 0;
+            if (box.getX() < 0) {
+                box.setX(0);
             }
-            if (box.y < 0) {
-                box.y = 0;
+            if (box.getY() < 0) {
+                box.sety(0);
             }
-            if (box.width > WIDTH) {
-                box.width = WIDTH;
+            if (box.getWidth() > WIDTH) {
+                box.setWidth(WIDTH);
             }
-            if (box.height > HEIGHT) {
-                box.height = HEIGHT;
+            if (box.getHeight() > HEIGHT) {
+                box.setHeight(HEIGHT);
             }
-            
-            for (int i = box.x; i <= box.width; i += 40) {
-                for (int j = box.y; j <= box.height; j += 40) {
+
+            for (int i = box.getX(); i < box.getX()+ box.getWidth(); i += 40) {
+                for (int j = box.getY(); j < box.getY()+box.getHeight(); j += 40) {
                     //MyVector projPoint = player.lookAt(new MyVector(i, j, 0), WIDTH, HEIGHT).coords;
-                    if (surface.contains(new Point3D(i, j, 0))) {
+                    Point3D projPoint = new Point3D(i, j, 0);
+                    if (surface.contains(projPoint)) {
                         g.setColor(Color.BLUE);
-                         g.drawOval(i, j, 5, 5);
+                        g.drawOval(i, j, 5, 5);
                         counter2++;
                     }
                 }
@@ -289,6 +290,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 cursorPoint = spawnVector();
                 Projection cursorProj = player.lookAt(cursorPoint, WIDTH, HEIGHT);
 
+                /*for (Surface surface : surfaces) {
+                    if (surface.contains((new Point3D(cursorProj.coords)))) {
+                        System.out.println("yep it's contained all right "+ counter++);
+                        
+                    }
+                }*/
+
                 player.lookAt(points, WIDTH, HEIGHT);
 
                 selected = null;
@@ -302,9 +310,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         }
                     }
                 }
-                
+
                 if (mouseDown && mouseButton == MouseEvent.BUTTON1) {
-                    
+
                     if (start == null) {
                         if (selected == null) {
                             start = new Point3D(spawnVector());
@@ -368,8 +376,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                     for (Point3D neighbor : top.getNeighbours()) {
                                         if (neighbor != end) {
                                             if (neighbor.partOfSurface(newSurface)) {
-                                                if (doneLoop)
+                                                if (doneLoop) {
                                                     cleanNode = true;
+                                                }
                                                 stack.add(neighbor); // this might be better to put up in the if doneLoop block
                                             }
                                         } else {
@@ -396,8 +405,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 } else if (mouseDown && mouseButton == MouseEvent.BUTTON3) {
                     start = null;
                 }
-            } 
-                
+            }
+
             repaint();
             try {
                 Thread.sleep(1000 / 60);
