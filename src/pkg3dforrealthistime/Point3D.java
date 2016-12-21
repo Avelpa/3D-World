@@ -24,16 +24,16 @@ public class Point3D extends MyVector{
     public Point3D(MyVector point) {
         this (point.x, point.y, point.z);
     }
-    
+
     public void linkTo(Point3D other) {
         if (other == null) {
             System.err.println("Linking null point");
             return;
         }
-        
+
         this.neighbours.add(other);
     }
-    
+
     public HashSet<Point3D> getNeighbours() {
         return this.neighbours;
     }

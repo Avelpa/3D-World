@@ -13,6 +13,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
@@ -21,6 +22,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,7 +39,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     private final int WIDTH = 1366, HEIGHT = 720;
     private final int PPM = 100;
 
-    HashMap<Point3D, Projection> points = new HashMap();
+    static HashMap<Point3D, Projection> points = new HashMap();
+    HashSet<Surface> surfaces = new HashSet();
 
     Spectator player = null;
 
@@ -107,7 +110,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         Main main = new Main();
         main.run();
     }
-    
+
     final int OVAL_SIZE = 40;
 
     @Override
@@ -117,17 +120,18 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
         Projection pointProj = null;
         for (Point3D point : points.keySet()) { // need to change null return val
-            
+
             pointProj = points.get(point);
 
             if (pointProj.inRange) {
-                if (point.equals(selected))
+                if (point.equals(selected)) {
                     g.setColor(Color.ORANGE);
-                else
+                } else {
                     g.setColor(Color.DARK_GRAY);
+                }
                 g.fillOval((int) (pointProj.coords.x - OVAL_SIZE / 2), (int) (pointProj.coords.y - OVAL_SIZE / 2), (int) OVAL_SIZE, (int) OVAL_SIZE);
             }
-            
+
             g.setColor(Color.DARK_GRAY);
             Projection neighborProj = null;
             for (Point3D neighbor : point.getNeighbours()) {
@@ -137,7 +141,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 }
             }
         }
-        
+
         g.setColor(Color.GREEN);
         if (start != null) {
             Projection proj = points.get(start);
@@ -152,13 +156,42 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 g.fillOval((int) (proj.coords.x - OVAL_SIZE / 2), (int) (proj.coords.y - OVAL_SIZE / 2), (int) OVAL_SIZE, (int) OVAL_SIZE);
             }
         }
-        
+
         if (!playerActive) {
             g.setColor(Color.RED);
             g.drawRect(0, 0, WIDTH - 1, HEIGHT - 1);
         } else {
             g.setColor(Color.BLACK);
             g.drawOval((int) (WIDTH / 2 - 20), (int) (HEIGHT / 2 - 20), 40, 40);
+        }
+
+        for (Surface surface : surfaces) {
+            Rectangle box = surface.getBounds();
+            int counter2 = 0;
+            if (box.x < 0) {
+                box.x = 0;
+            }
+            if (box.y < 0) {
+                box.y = 0;
+            }
+            if (box.width > WIDTH) {
+                box.width = WIDTH;
+            }
+            if (box.height > HEIGHT) {
+                box.height = HEIGHT;
+            }
+            
+            for (int i = box.x; i <= box.width; i += 40) {
+                for (int j = box.y; j <= box.height; j += 40) {
+                    //MyVector projPoint = player.lookAt(new MyVector(i, j, 0), WIDTH, HEIGHT).coords;
+                    if (surface.contains(new Point3D(i, j, 0))) {
+                        g.setColor(Color.BLUE);
+                         g.drawOval(i, j, 5, 5);
+                        counter2++;
+                        System.out.println(counter2);
+                    }
+                }
+            }
         }
 
         /* 2 CAMERA SET-UP
@@ -253,16 +286,16 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         }
                     }
                 }
-                
+
                 cursorPoint = spawnVector();
                 Projection cursorProj = player.lookAt(cursorPoint, WIDTH, HEIGHT);
 
                 player.lookAt(points, WIDTH, HEIGHT);
-                
+
                 selected = null;
                 if (start != null) {
                     double closestDist = Float.MAX_VALUE;
-                    for (Point3D point: points.keySet()) {
+                    for (Point3D point : points.keySet()) {
                         if (points.get(point).inRange && point != start) {
                             double dist = points.get(point).coords.sub(cursorProj.coords).length();
                             if (dist <= OVAL_SIZE) {
@@ -293,7 +326,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         if (closed) {
                             Surface newSurface = new Surface(end);
                             Point3D head = end;
-                            
+                            surfaces.add(newSurface);
+
                             Stack<Point3D> stack = new Stack();
                             stack.push(head);
                             Point3D top = null;
@@ -301,11 +335,11 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             while (!stack.isEmpty() && !doneLoop) {
                                 top = stack.pop();
                                 top.addSurface(newSurface);
-                                
+
                                 if (top.getNeighbours().isEmpty()) {
                                     top.remSurface(newSurface);
                                 }
-                                for (Point3D neighbor: top.getNeighbours()) {
+                                for (Point3D neighbor : top.getNeighbours()) {
                                     if (neighbor == end) {
                                         doneLoop = true;
                                         break;
@@ -320,18 +354,18 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                 top = stack.pop();
                                 top.remSurface(newSurface);
                             }
-                            
+
                             boolean dirty = true;
                             while (dirty) {
                                 dirty = false;
                                 head = end;
-                                
+
                                 stack.push(head);
                                 while (!stack.isEmpty()) {
                                     top = stack.pop();
 
                                     boolean cleanNode = false;
-                                    for (Point3D neighbor: top.getNeighbours()) {
+                                    for (Point3D neighbor : top.getNeighbours()) {
                                         if (neighbor != end) {
                                             if (neighbor.partOfSurface(newSurface)) {
                                                 if (doneLoop)
@@ -374,7 +408,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             }
         }
     }
-    
+
     public MyVector spawnVector() {
         return player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(4));
     }
@@ -476,6 +510,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         if (playerActive) {
             pan(e.getX(), e.getY());
         }
+
     }
 
 }
