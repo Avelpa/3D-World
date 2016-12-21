@@ -58,40 +58,54 @@ public class Spectator {
     }
     
     public void move() {
-        this.velocity = this.velocity.add(this.acceleration);
-        if (velocity.length() > maxVel) {
-            velocity = velocity.unit().mult(maxVel);
-        }
-        this.camera.moveBy(this.velocity);
-        
+        // decelerate the player when not actively moving
         if (!moving) {
-            
+            if (this.velocity.length() < this.accel) { // accel is the smallest unit of velocity
+                this.velocity = MyVector.ZERO;
+                return;
+            }
+            this.acceleration = this.velocity.unit().mult(-this.accel);
+        } else {
+            // if moving in multiple directions at once, cap the acceleration
+            if (this.acceleration.length() != this.accel) {
+                this.acceleration = this.acceleration.unit().mult(this.accel);
+            }
         }
+        
+        this.velocity = this.velocity.add(this.acceleration);
+        if (moving) {
+            if (velocity.length() > maxVel) {
+                velocity = velocity.unit().mult(maxVel);
+            }
+        }
+        
+        this.camera.moveBy(this.velocity);
         moving = false;
+        this.acceleration = MyVector.ZERO;
     }
     
     public void moveForward() {
-        this.acceleration = this.camera.getNormal().unit().mult(this.accel);
+        this.acceleration = this.acceleration.add(this.camera.getNormal().unit().mult(this.accel));
         moving = true;
     }
     public void moveBackward() {
-        this.acceleration = this.camera.getNormal().unit().mult(-this.accel);
+        this.acceleration = this.acceleration.add(this.camera.getNormal().unit().mult(-this.accel));
         moving = true;
     }
     public void moveLeft() {
-        this.acceleration = this.camera.getX2D().unit().mult(-this.accel);
+        this.acceleration = this.acceleration.add(this.camera.getX2D().unit().mult(-this.accel));
         moving = true;
     }
     public void moveRight() {
-        this.acceleration = this.camera.getX2D().unit().mult(this.accel);
+        this.acceleration = this.acceleration.add(this.camera.getX2D().unit().mult(this.accel));
         moving = true;
     }
     public void moveDown() {
-        this.acceleration = this.camera.getY2D().unit().mult(-this.accel);
+        this.acceleration = this.acceleration.add(this.camera.getY2D().unit().mult(-this.accel));
         moving = true;
     }
     public void moveUp() {
-        this.acceleration = this.camera.getY2D().unit().mult(this.accel);
+        this.acceleration = this.acceleration.add(this.camera.getY2D().unit().mult(this.accel));
         moving = true;
     }
     

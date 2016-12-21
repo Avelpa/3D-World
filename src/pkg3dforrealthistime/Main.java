@@ -87,8 +87,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_SPACE, false);
 
         player = new Spectator(MyVector.X.mult(20), MyVector.Y.mult(90), new Camera(0.017, 60, PPM));
-        player.setAccel(0.002);
-        player.setMaxVel(0.05);
+        player.setAccel(0.0015);
+        player.setMaxVel(0.04);
         player.setLookDegrees(0.12);
 
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
