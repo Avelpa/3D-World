@@ -15,7 +15,7 @@ import java.util.HashSet;
 public class Point3D extends MyVector{
     private HashSet<Point3D> neighbours;
     private HashSet<Surface> surfaces;
-
+    
     public Point3D(double x, double y, double z) {
         super(x, y, z);
         neighbours = new HashSet();
@@ -45,5 +45,8 @@ public class Point3D extends MyVector{
     }
     public void remSurface(Surface surface) {
         this.surfaces.remove(surface);
+    }
+    public boolean hasSurface() {
+        return !this.surfaces.isEmpty();
     }
 }
