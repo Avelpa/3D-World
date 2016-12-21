@@ -80,7 +80,7 @@ public class Camera {
         
         MyVector projNY = relSubj.projectOntoPlane(this.y2D, MyVector.ZERO);
         
-        if (projNY.scalarProject(this.normal) < 0)
+        if (projNY.scalarProject(this.normal) <= 0)
             ret.inFront = false;
         
         double nyAngle = MyVector.angleBetween(projNY, this.normal);

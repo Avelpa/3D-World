@@ -25,6 +25,8 @@ public class Spectator {
     
     private boolean moving = false;
     
+    private double verticalRot = 0d;
+    
     public Spectator(MyVector position, MyVector YawPitchRoll, Camera camera) {
         this.camera = camera;
         
@@ -122,9 +124,19 @@ public class Spectator {
     }
     public void lookDown(int pixels) {
         this.camera.rotateVertically(pixels * (-this.lookDegrees));
+        
+        double angleFromZ = MyVector.angleBetween(this.camera.getY2D(), MyVector.Z);
+        if (angleFromZ > 90) {
+            this.camera.rotateVertically(angleFromZ - 90);
+        }
     }
     public void lookUp(int pixels) {
         this.camera.rotateVertically(pixels * this.lookDegrees);
+        
+        double angleFromZ = MyVector.angleBetween(this.camera.getY2D(), MyVector.Z);
+        if (angleFromZ > 90) {
+            this.camera.rotateVertically(90 - angleFromZ);
+        }
     }
     
     public Camera getCamera() {
