@@ -5,6 +5,7 @@
  */
 package pkg3dforrealthistime;
 
+import MyVector.MyMatrix;
 import MyVector.MyVector;
 import java.util.HashMap;
 
@@ -25,7 +26,7 @@ public class Spectator {
     
     private boolean moving = false;
     
-    private double verticalRot = 0d;
+    private final MyVector ABSOLUTE_VERTICAL;
     
     public Spectator(MyVector position, MyVector YawPitchRoll, Camera camera) {
         this.camera = camera;
@@ -33,6 +34,8 @@ public class Spectator {
         this.camera.moveTo(position);
         this.camera.rotateHorizontally(YawPitchRoll.x);
         this.camera.rotateVertically(YawPitchRoll.y);
+        
+        this.ABSOLUTE_VERTICAL = MyMatrix.rotate(MyVector.Z, this.camera.getX2D(), MyVector.ZERO, YawPitchRoll.y);
     }
     
     public void lookAt(HashMap<Point3D, Projection> points, int SCR_WIDTH, int SCR_HEIGHT) {
@@ -117,25 +120,25 @@ public class Spectator {
     }*/
     
     public void lookLeft(int pixels) {
-        this.camera.rotateAroundRelativeAxis(MyVector.Z, pixels * this.lookDegrees);
+        this.camera.rotateAroundRelativeAxis(ABSOLUTE_VERTICAL, pixels * this.lookDegrees);
     }
     public void lookRight(int pixels) {
-        this.camera.rotateAroundRelativeAxis(MyVector.Z, pixels * (-this.lookDegrees));
+        this.camera.rotateAroundRelativeAxis(ABSOLUTE_VERTICAL, pixels * (-this.lookDegrees));
     }
     public void lookDown(int pixels) {
         this.camera.rotateVertically(pixels * (-this.lookDegrees));
         
-        double angleFromZ = MyVector.angleBetween(this.camera.getY2D(), MyVector.Z);
-        if (angleFromZ > 90) {
-            this.camera.rotateVertically(angleFromZ - 90);
+        double angleFromVertical = MyVector.angleBetween(this.camera.getY2D(), ABSOLUTE_VERTICAL);
+        if (angleFromVertical > 90) {
+            this.camera.rotateVertically(angleFromVertical - 90);
         }
     }
     public void lookUp(int pixels) {
         this.camera.rotateVertically(pixels * this.lookDegrees);
         
-        double angleFromZ = MyVector.angleBetween(this.camera.getY2D(), MyVector.Z);
-        if (angleFromZ > 90) {
-            this.camera.rotateVertically(90 - angleFromZ);
+        double angleFromVertical = MyVector.angleBetween(this.camera.getY2D(), ABSOLUTE_VERTICAL);
+        if (angleFromVertical > 90) {
+            this.camera.rotateVertically(90 - angleFromVertical);
         }
     }
     
