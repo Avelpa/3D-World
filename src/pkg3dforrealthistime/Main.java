@@ -89,7 +89,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_CAPS_LOCK, false);
         keys.put(KeyEvent.VK_SPACE, false);
 
-        player = new Spectator(MyVector.X.mult(20), MyVector.Y.mult(90), new Camera(0.017, 60, PPM));
+        player = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
         player.setAccel(0.0015);
         player.setMaxVel(0.04);
         player.setLookDegrees(0.12);
@@ -188,7 +188,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         g.setColor(Color.BLUE);
                          g.drawOval(i, j, 5, 5);
                         counter2++;
-                        System.out.println(counter2);
                     }
                 }
             }
@@ -293,15 +292,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 player.lookAt(points, WIDTH, HEIGHT);
 
                 selected = null;
-                if (start != null) {
-                    double closestDist = Float.MAX_VALUE;
-                    for (Point3D point : points.keySet()) {
-                        if (points.get(point).inRange && point != start) {
-                            double dist = points.get(point).coords.sub(cursorProj.coords).length();
-                            if (dist <= OVAL_SIZE) {
-                                closestDist = dist;
-                                selected = point;
-                            }
+                double closestDist = Float.MAX_VALUE;
+                for (Point3D point : points.keySet()) {
+                    if (points.get(point).inRange && point != start) {
+                        double dist = points.get(point).coords.sub(cursorProj.coords).length();
+                        if (dist <= OVAL_SIZE) {
+                            closestDist = dist;
+                            selected = point;
                         }
                     }
                 }
@@ -309,8 +306,12 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 if (mouseDown && mouseButton == MouseEvent.BUTTON1) {
                     
                     if (start == null) {
-                        start = new Point3D(spawnVector());
-                        points.put(start, player.lookAt(start, WIDTH, HEIGHT));
+                        if (selected == null) {
+                            start = new Point3D(spawnVector());
+                            points.put(start, player.lookAt(start, WIDTH, HEIGHT));
+                        } else {
+                            start = selected;
+                        }
                     } else {
                         boolean closed = false;
                         if (selected != null) {
@@ -326,7 +327,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         if (closed) {
                             Surface newSurface = new Surface(end);
                             Point3D head = end;
-                            surfaces.add(newSurface);
 
                             Stack<Point3D> stack = new Stack();
                             stack.push(head);
@@ -386,10 +386,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                     break;
                                 }
                             }
-                            //////////////////////////////////////
-                            // ADD NEW SURFACE TO COLLECTION HERE!!
-                            //////////////////////////////////////
-//                            start = null;
+                            if (newSurface != null)
+                                surfaces.add(newSurface);
                         }
                         start = end;
                     }

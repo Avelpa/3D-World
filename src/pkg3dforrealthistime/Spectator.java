@@ -101,11 +101,11 @@ public class Spectator {
         moving = true;
     }
     public void moveDown() {
-        this.acceleration = this.acceleration.add(this.camera.getY2D().unit().mult(-this.accel));
+        this.acceleration = this.acceleration.add(ABSOLUTE_VERTICAL.mult(-this.accel));
         moving = true;
     }
     public void moveUp() {
-        this.acceleration = this.acceleration.add(this.camera.getY2D().unit().mult(this.accel));
+        this.acceleration = this.acceleration.add(ABSOLUTE_VERTICAL.mult(this.accel));
         moving = true;
     }
     

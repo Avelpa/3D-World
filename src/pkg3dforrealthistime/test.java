@@ -5,8 +5,9 @@
  */
 package pkg3dforrealthistime;
 
-import MyVector.MyMatrix;
-import MyVector.MyVector;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Stack;
 
 /**
  *
@@ -14,55 +15,99 @@ import MyVector.MyVector;
  */
 public class test {
     public static void main(String[] args) {
+        test test = new test();
+    }
+    
+    public test() {
+        Node a = new Node('a');
+        Node b = new Node('b');
+        Node c = new Node('c');
+        Node d = new Node('d');
         
-//        Camera camera = new Camera(0.017, 90);
+        Node.link(a, b);
+        Node.link(b, c);
+        Node.link(c, a);
+        Node.link(c, d);
+        Node.link(d, a);
         
-        /*
-        MyVector offset = new MyVector(10, 0, 0);
+        HashSet<ArrayList<Node>> results = traverse(a);
+        for (ArrayList<Node> set: results) {
+            for (Node node: set) {
+                System.out.println(node.ID);
+            }
+            System.out.println();
+        }
+    }
+    
+    public HashSet<ArrayList<Node>> traverse(Node a) {
         
-        MyVector orthog1 = MyMatrix.rotate(new MyVector(-1, 0, 0), MyVector.Y, MyVector.ZERO, 12);
-        MyVector orthog2 = MyMatrix.rotateY(orthog1, 90);
+        HashSet<ArrayList<Node>> results = new HashSet();
         
-        MyVector orthog1Proj = camera.getProjection(orthog1.mult(200).add(offset), 4, 4);
-        MyVector orthog2Proj = camera.getProjection(orthog2.mult(200).add(offset), 4, 4);
+        ArrayList<ArrayList<Node>> progress = new ArrayList();
+        progress.add(new ArrayList());
+        int progressIndex = progress.size() - 1;
         
-        System.out.println(orthog1Proj);
-        System.out.println(orthog2Proj);
-        System.out.println(MyVector.angleBetween(orthog1Proj, orthog2Proj));*/
+        Node cur;
+        Stack<Node> stack = new Stack();
+        stack.add(a);
         
-        final int SCR_WIDTH = 4;
-        final int SCR_HEIGHT = 4;
-        
-//        camera.moveTo(0, 0, 0);
-        
-//        System.out.println(camera.getProjection(MyVector.Z, SCR_WIDTH, SCR_HEIGHT));
-        /*
-        MyVector center = MyVector.ZERO;
-        MyVector offset = new MyVector(-10, 0, 0);
-        
-        MyVector point = new MyVector(0, 0, 1).add(offset); 
-        
-        MyVector oldProjPoint = camera.getProjection(point, SCR_WIDTH, SCR_HEIGHT);
-        System.out.println("point: " + point + "\n--------------");
-        
-        System.out.println("real before: " + point.sub(offset));
-        
-        
-        MyVector oldPoint = point;
-        point = MyMatrix.rotate(point, MyVector.X, center, -10);
-        System.out.println("real point: " + point.sub(offset));
-        System.out.println("real point len: " + point.sub(offset).length());
-        System.out.println("real angle: " + MyVector.angleBetween(point.sub(offset), MyVector.Z));
-        
-        MyVector projPoint = camera.getProjection(point, SCR_WIDTH, SCR_HEIGHT);
-        
-        System.out.println("--------\nproj before: " + oldProjPoint);
-        MyVector referenceProj = camera.getProjection(MyVector.Z.sub(MyVector.X), SCR_WIDTH, SCR_HEIGHT);
-        System.out.println("proj point: " + projPoint);
-        System.out.println("proj point len: " + projPoint.length());
-        System.out.println("proj angle: " + MyVector.angleBetween(projPoint, referenceProj));
-*/
-        
-        System.out.println(0.5 % 1);
+        while (!stack.isEmpty()) {
+            cur = stack.pop();
+            
+            int curIndex = progress.get(progressIndex).indexOf(cur);
+            if (curIndex == -1) {
+                
+                progress.get(progressIndex).add(cur);
+                
+                int curProgressSize = progress.get(progressIndex).size();
+                Node prev = null;
+                if (curProgressSize >= 2) {
+                    prev = progress.get(progressIndex).get(curProgressSize - 2);
+                }
+                boolean needToDupe = false;
+                for (Node neighbor: cur.neighbors) {
+                    if (prev != neighbor) {
+                        if (needToDupe) {
+                            progress.add(new ArrayList(progress.get(progressIndex)));
+                            progressIndex ++;
+                        } else {
+                            needToDupe = true;
+                        }
+                        stack.add(neighbor);
+                    }
+                }
+                if (!needToDupe && cur.neighbors.size() <= 1) {
+                    progress.remove(progressIndex);
+                    progressIndex --;
+                }
+            } else {
+                if (curIndex == 0) {
+                    results.add(progress.get(progressIndex));
+                }
+                progress.remove(progressIndex);
+                progressIndex --;
+            }
+        }
+        return results;
+    }
+}
+
+class Node {
+    public HashSet<Node> neighbors;
+    char ID;
+    boolean visited = false;
+    
+    public Node(char ID) {
+        neighbors = new HashSet();
+        this.ID = ID;
+    }
+    
+    public void linkTo(Node other) {
+        this.neighbors.add(other);
+    }
+    
+    public static void link(Node a, Node b) {
+        a.linkTo(b);
+        b.linkTo(a);
     }
 }
