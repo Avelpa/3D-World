@@ -49,6 +49,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     Point3D start = null;
     Point3D end = null;
     boolean mouseDown = false;
+    int mouseButton = -1;
     HashMap<Integer, Boolean> keys;
 
     int prevMouseX = -1;
@@ -89,9 +90,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_SPACE, false);
 
         player = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
-        player.setAccel(0.0005);
-        player.setMaxVel(0.4);
-        player.setLookDegrees(0.2);
+        player.setAccel(0.002);
+        player.setMaxVel(0.05);
+        player.setLookDegrees(0.12);
 
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
 //            for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
@@ -304,8 +305,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         }
                     }
                 }
-
-                if (mouseDown) {
+                
+                if (mouseDown && mouseButton == MouseEvent.BUTTON1) {
+                    
                     if (start == null) {
                         start = new Point3D(spawnVector());
                         points.put(start, player.lookAt(start, WIDTH, HEIGHT));
@@ -313,11 +315,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         boolean closed = false;
                         if (selected != null) {
                             end = selected;
-                            if (end.hasSurface()) {
-                                Point3D temp = end;
-                                end = start;
-                                start = temp;
-                            }
                             closed = true;
                         } else {
                             end = new Point3D(spawnVector());
@@ -336,7 +333,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             Point3D top = null;
                             boolean doneLoop = false;
                             while (!stack.isEmpty() && !doneLoop) {
-                                System.out.println("loop1");
                                 top = stack.pop();
                                 top.addSurface(newSurface);
 
@@ -355,29 +351,27 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                 }
                             }
                             while (!stack.isEmpty()) {
-                                System.out.println("loop2");
                                 top = stack.pop();
                                 top.remSurface(newSurface);
                             }
 
                             boolean dirty = true;
                             while (dirty) {
-                                System.out.println("loop3");
                                 dirty = false;
                                 head = end;
 
                                 stack.push(head);
                                 while (!stack.isEmpty()) {
-                                    System.out.println("loop4");
                                     top = stack.pop();
 
                                     boolean cleanNode = false;
                                     for (Point3D neighbor : top.getNeighbours()) {
                                         if (neighbor != end) {
-                                            if (neighbor.partOfSurface(newSurface) && doneLoop) {
-                                                cleanNode = true;
+                                            if (neighbor.partOfSurface(newSurface)) {
+                                                if (doneLoop)
+                                                    cleanNode = true;
+                                                stack.add(neighbor); // this might be better to put up in the if doneLoop block
                                             }
-                                            stack.add(neighbor);
                                         } else {
                                             cleanNode = true;
                                         }
@@ -387,18 +381,25 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                         top.remSurface(newSurface);
                                     }
                                 }
+                                if (!doneLoop) {
+                                    newSurface = null;
+                                    break;
+                                }
                             }
-                            System.out.println("NULLIFY");
-                            start = null;
-                        } else {
-                            start = end;
+                            //////////////////////////////////////
+                            // ADD NEW SURFACE TO COLLECTION HERE!!
+                            //////////////////////////////////////
+//                            start = null;
                         }
+                        start = end;
                     }
                     end = null;
                     mouseDown = false;
+                } else if (mouseDown && mouseButton == MouseEvent.BUTTON3) {
+                    start = null;
                 }
-            }
-
+            } 
+                
             repaint();
             try {
                 Thread.sleep(1000 / 60);
@@ -478,7 +479,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     @Override
     public void mousePressed(MouseEvent e) {
         mouseDown = true;
-
+        mouseButton = e.getButton();
     }
 
     @Override

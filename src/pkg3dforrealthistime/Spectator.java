@@ -59,8 +59,9 @@ public class Spectator {
         }
         this.camera.moveBy(this.velocity);
         
-        if (!moving)
-            this.acceleration = this.velocity.unit().mult(-accel);
+        if (!moving) {
+            
+        }
         moving = false;
     }
     
