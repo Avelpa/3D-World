@@ -46,6 +46,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     Point3D start = null;
     Point3D end = null;
     boolean mouseDown = false;
+    int mouseButton = -1;
     HashMap<Integer, Boolean> keys;
 
     int prevMouseX = -1;
@@ -272,7 +273,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     }
                 }
                 
-                if (mouseDown) {
+                if (mouseDown && mouseButton == MouseEvent.BUTTON1) {
+                    
                     if (start == null) {
                         start = new Point3D(spawnVector());
                         points.put(start, player.lookAt(start, WIDTH, HEIGHT));
@@ -359,8 +361,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     }
                     end = null;
                     mouseDown = false;
+                } else if (mouseDown && mouseButton == MouseEvent.BUTTON3) {
+                    start = null;
                 }
-            }
+            } 
                 
             repaint();
             try {
@@ -441,6 +445,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     @Override
     public void mousePressed(MouseEvent e) {
         mouseDown = true;
+        mouseButton = e.getButton();
     }
 
     @Override
