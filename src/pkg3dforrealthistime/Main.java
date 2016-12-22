@@ -190,15 +190,15 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 box.setHeight(box.getHeight() - (box.getY() + box.getHeight() - HEIGHT));
             }
             g.setColor(Color.ORANGE);
-             for (int i = box.getX(); i < box.getX() + box.getWidth(); i += 5) {
-                for (int j = box.getY(); j < box.getY() + box.getHeight(); j += 5) {
+             for (int i = box.getX(); i < box.getX() + box.getWidth()-4; i += 1) {
+                for (int j = box.getY(); j < box.getY() + box.getHeight()-4; j += 1) {
                     
                     Point3D projPoint = new Point3D(i, j, 0);
                     if (surface.contains(projPoint)) {
                         
                         
                         
-                        g.fillOval(i, j, 5, 5);
+                        g.fillOval(i, j, 1, 1);
                         // counter2++;
                         //System.out.println(counter2);
                         

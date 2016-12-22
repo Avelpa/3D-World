@@ -23,7 +23,7 @@ public class Surface  {
     }
 
     public boolean intersects(Point3D point, Point3D start, Point3D end) {
-        /*if (start.y > end.y) {
+        if (start.y > end.y) {
             intersects(point, end, start);
         }
 
@@ -37,7 +37,6 @@ public class Surface  {
         double slopeEnd = Math.abs((end.y - point.y) / (end.x - point.x));
         double slopeStart = Math.abs((point.y - start.y) / (point.x - start.x));
 
-        System.out.println(slopeEnd + "--" + slopeStart);
 
         if (end.x < start.x) {
             if (slopeEnd < slopeStart) {
@@ -47,7 +46,7 @@ public class Surface  {
             if (slopeEnd > slopeStart) {
                 return false;
             }
-        }*/
+        }
         
 
         return true;
