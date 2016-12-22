@@ -13,7 +13,6 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
@@ -21,6 +20,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Stack;
@@ -61,6 +61,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     boolean playerActive = false;
 
     public Main() {
+        
         frame = new JFrame("3D");
         this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
         frame.add(this);
@@ -89,7 +90,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_CAPS_LOCK, false);
         keys.put(KeyEvent.VK_SPACE, false);
 
-        player = new Spectator(MyVector.X.mult(20), MyVector.Y.mult(90), new Camera(0.017, 60, PPM));
+        player = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
         player.setAccel(0.0015);
         player.setMaxVel(0.04);
         player.setLookDegrees(0.12);
@@ -300,111 +301,56 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 player.lookAt(points, WIDTH, HEIGHT);
 
                 selected = null;
-                if (start != null) {
-                    double closestDist = Float.MAX_VALUE;
-                    for (Point3D point : points.keySet()) {
-                        if (points.get(point).inRange && point != start) {
-                            double dist = points.get(point).coords.sub(cursorProj.coords).length();
-                            if (dist <= OVAL_SIZE) {
-                                closestDist = dist;
-                                selected = point;
-                            }
+                double closestDist = Float.MAX_VALUE;
+                for (Point3D point : points.keySet()) {
+                    if (points.get(point).inRange && point != start) {
+                        double dist = points.get(point).coords.sub(cursorProj.coords).length();
+                        if (dist <= OVAL_SIZE) {
+                            closestDist = dist;
+                            selected = point;
                         }
                     }
                 }
 
-                if (mouseDown && mouseButton == MouseEvent.BUTTON1) {
+                if (mouseDown) {
+                    if (mouseButton == MouseEvent.BUTTON1) {
+                        Point3D newPoint = selected;
+                        if (newPoint == null) {
+                            newPoint = new Point3D(spawnVector());
+                        }
 
-                    if (start == null) {
-                        start = new Point3D(spawnVector());
-                        points.put(start, player.lookAt(start, WIDTH, HEIGHT));
-                    } else {
-                        boolean closed = false;
-                        if (selected != null) {
-                            end = selected;
-                            closed = true;
+                        if (start == null) {
+                            start = newPoint;
                         } else {
-                            end = new Point3D(spawnVector());
-                            points.put(end, player.lookAt(end, WIDTH, HEIGHT));
+                            end = newPoint;
+                            Point3D.link(start, end);
+                            
+                            if (selected != null) {
+                                
+                                Surface newSurface = findNewSurface(surfaces, findLoops(end));
+                                if (newSurface == null && selected != null) {
+//                                    Point3D.unlink(start, end);
+                                }
+                                System.out.println(surfaces.size());
+                            }
+//                            ArrayList<ArrayList<Point3D>> loops = findLoops(end);
+//                            for (ArrayList<Point3D> loop: loops) {
+//                                for (Point3D point: loop) {
+//                                    System.out.print(point + " ");
+//                                }
+//                                System.out.println("");
+//                            }
+
+                                
+                            start = end;
+                            end = null;
                         }
-
-                        start.linkTo(end);
-
-                        if (closed) {
-                            Surface newSurface = new Surface(end);
-                            Point3D head = end;
-                            surfaces.add(newSurface);
-
-                            Stack<Point3D> stack = new Stack();
-                            stack.push(head);
-                            Point3D top = null;
-                            boolean doneLoop = false;
-                            while (!stack.isEmpty() && !doneLoop) {
-                                top = stack.pop();
-                                top.addSurface(newSurface);
-
-                                if (top.getNeighbours().isEmpty()) {
-                                    top.remSurface(newSurface);
-                                }
-                                for (Point3D neighbor : top.getNeighbours()) {
-                                    if (neighbor == end) {
-                                        doneLoop = true;
-                                        break;
-                                    }
-                                    if (!neighbor.partOfSurface(newSurface)) {
-                                        stack.add(neighbor);
-                                        neighbor.addSurface(newSurface);
-                                    }
-                                }
-                            }
-                            while (!stack.isEmpty()) {
-                                top = stack.pop();
-                                top.remSurface(newSurface);
-                            }
-
-                            boolean dirty = true;
-                            while (dirty) {
-                                dirty = false;
-                                head = end;
-
-                                stack.push(head);
-                                while (!stack.isEmpty()) {
-                                    top = stack.pop();
-
-                                    boolean cleanNode = false;
-                                    for (Point3D neighbor : top.getNeighbours()) {
-                                        if (neighbor != end) {
-                                            if (neighbor.partOfSurface(newSurface)) {
-                                                if (doneLoop) {
-                                                    cleanNode = true;
-                                                }
-                                                stack.add(neighbor); // this might be better to put up in the if doneLoop block
-                                            }
-                                        } else {
-                                            cleanNode = true;
-                                        }
-                                    }
-                                    if (!cleanNode) {
-                                        dirty = true;
-                                        top.remSurface(newSurface);
-                                    }
-                                }
-                                if (!doneLoop) {
-                                    newSurface = null;
-                                    break;
-                                }
-                            }
-                            //////////////////////////////////////
-                            // ADD NEW SURFACE TO COLLECTION HERE!!
-                            //////////////////////////////////////
-//                            start = null;
-                        }
-                        start = end;
+                        points.put(start, player.lookAt(start, WIDTH, HEIGHT));
+                    } 
+                    else if (mouseButton == MouseEvent.BUTTON3) {
+                        start = null;
                     }
-                    end = null;
                     mouseDown = false;
-                } else if (mouseDown && mouseButton == MouseEvent.BUTTON3) {
-                    start = null;
                 }
             }
 
@@ -416,6 +362,104 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             }
         }
     }
+    
+    public ArrayList<ArrayList<Point3D>> findLoops(Point3D root) {
+        
+        ArrayList<ArrayList<Point3D>> loops = new ArrayList();
+        
+        ArrayList<ArrayList<Point3D>> potentialLoops = new ArrayList();
+        potentialLoops.add(new ArrayList());
+        int lastPotentialLoopIndex = potentialLoops.size() - 1;
+        
+        Point3D cur = null;
+        Point3D prev = null;
+        
+        Stack<Point3D> stack = new Stack();
+        stack.add(root);
+        
+        while (!stack.isEmpty()) {
+            cur = stack.pop();
+            
+            int curIndex = potentialLoops.get(lastPotentialLoopIndex).indexOf(cur);
+            if (curIndex == -1) {
+                
+                potentialLoops.get(lastPotentialLoopIndex).add(cur);
+                
+                int curProgressSize = potentialLoops.get(lastPotentialLoopIndex).size();
+                
+                if (curProgressSize >= 2) {
+                    prev = potentialLoops.get(lastPotentialLoopIndex).get(curProgressSize - 2);
+                }
+                boolean needToDupe = false;
+                for (Point3D neighbor: cur.getNeighbours()) {
+                    if (prev != neighbor) {
+                        if (needToDupe) {
+                            potentialLoops.add(new ArrayList(potentialLoops.get(lastPotentialLoopIndex)));
+                            lastPotentialLoopIndex ++;
+                        } else {
+                            needToDupe = true;
+                        }
+                        stack.add(neighbor);
+                    }
+                }
+                if (!needToDupe && cur.getNeighbours().size() <= 1) {
+                    potentialLoops.remove(lastPotentialLoopIndex);
+                    lastPotentialLoopIndex --;
+                }
+            } else {
+                if (curIndex == 0) {
+                    insertIntoListbySize(loops, potentialLoops.get(lastPotentialLoopIndex));
+                }
+                potentialLoops.remove(lastPotentialLoopIndex);
+                lastPotentialLoopIndex --;
+            }
+        }
+        return loops;
+    }
+    
+    // returns the last added surface
+    public Surface findNewSurface(HashSet<Surface> surfaces, ArrayList<ArrayList<Point3D>> results) {
+        if (results.isEmpty())
+            return null;
+        
+        HashMap<Surface, ArrayList<Point3D>> surfacePoints = new HashMap();
+        
+        int curSize = results.get(0).size();
+        for (int i = 0; i < results.size(); i ++) {
+            boolean filtered = false;
+            for (Surface surface: surfaces) {
+                if (!surfacePoints.containsKey(surface)) {
+                    surfacePoints.put(surface, surface.getList());
+                }
+                if (surfacePoints.get(surface).containsAll(results.get(i)) && results.get(i).containsAll(surfacePoints.get(surface))) {
+                    filtered = true;
+                    break;
+                }
+            }
+            if (!filtered) {
+                Surface newSurface = new Surface(results.get(i).get(0));
+                for (Point3D point: results.get(i)) {
+                    point.addSurface(newSurface);
+                }
+                surfaces.add(newSurface);
+                return newSurface;
+            }
+        }
+        return null;
+    }
+    // @params:
+    // lists should be sorted inascending list size
+    void insertIntoListbySize(ArrayList<ArrayList<Point3D>> ascendingSurfaces, ArrayList<Point3D> potentialSurface) {
+        int insIndex = 0;
+        for (; insIndex < ascendingSurfaces.size(); insIndex ++) {
+            if (potentialSurface.size() >= ascendingSurfaces.get(insIndex).size()) {
+                insIndex ++;
+                break;
+            }
+        }
+        ascendingSurfaces.add(insIndex, potentialSurface);
+    }
+    
 
     public MyVector spawnVector() {
         return player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(4));
@@ -522,3 +566,4 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     }
 
 }
+

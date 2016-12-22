@@ -92,7 +92,6 @@ public class MyVector {
         }
         return false;
     }
-
     @Override
     public int hashCode() {
         int hash = 7;

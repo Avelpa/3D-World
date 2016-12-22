@@ -163,10 +163,6 @@ public class Camera {
         return this.FOV;
     }
     
-    /*
-        @params:
-        vector: x = 0, y = desired x, z = desired y
-    */
     private MyVector cartesianToScreen(MyVector vector, int SCR_WIDTH, int SCR_HEIGHT) {
         
         double x = SCR_WIDTH / 2 + vector.y * this.PPM;
