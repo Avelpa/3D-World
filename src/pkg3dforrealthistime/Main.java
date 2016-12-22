@@ -11,6 +11,7 @@ import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Robot;
@@ -113,6 +114,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     }
 
     final int OVAL_SIZE = 40;
+    final Font surfaceFont = new Font("comic sans", 11, 20);
 
     @Override
     public void paintComponent(Graphics g) {
@@ -195,6 +197,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 }
             }
         }
+        
+        g.setFont(surfaceFont);
+        g.drawString(String.valueOf(surfaces.size()), 10, 30);
 
         /* 2 CAMERA SET-UP
         g.setColor(Color.LIGHT_GRAY);
@@ -403,7 +408,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     }
                 }
             } else {
-                if (curIndex == 0 && potentialLoops.get(lastPotentialLoopIndex).contains(connection)) {
+                if (curIndex == 0 && potentialLoops.get(lastPotentialLoopIndex).contains(connection) && potentialLoops.get(lastPotentialLoopIndex).size() == 3) {
                     insertIntoListbySize(loops, potentialLoops.get(lastPotentialLoopIndex));
                 }
                 potentialLoops.remove(lastPotentialLoopIndex);
