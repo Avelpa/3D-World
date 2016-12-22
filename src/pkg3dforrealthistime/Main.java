@@ -166,34 +166,35 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             g.drawOval((int) (WIDTH / 2 - 20), (int) (HEIGHT / 2 - 20), 40, 40);
         }
 
-//        for (Surface surface : surfaces) {
-//            ProjRectangle box = surface.getBoundsProj();
-//            int counter2 = 0;
-//            if (box.getX() < 0) {
-//                box.setX(0);
-//            }
-//            if (box.getY() < 0) {
-//                box.sety(0);
-//            }
-//            if (box.getWidth() > WIDTH) {
-//                box.setWidth(WIDTH);
-//            }
-//            if (box.getHeight() > HEIGHT) {
-//                box.setHeight(HEIGHT);
-//            }
-//
-//            for (int i = box.getX(); i < box.getX()+ box.getWidth(); i += 40) {
-//                for (int j = box.getY(); j < box.getY()+box.getHeight(); j += 40) {
-//                    //MyVector projPoint = player.lookAt(new MyVector(i, j, 0), WIDTH, HEIGHT).coords;
-//                    Point3D projPoint = new Point3D(i, j, 0);
-//                    if (surface.contains(projPoint)) {
-//                        g.setColor(Color.BLUE);
-//                        g.drawOval(i, j, 5, 5);
-//                        counter2++;
-//                    }
-//                }
-//            }
-//        }
+        for (Surface surface : surfaces) {
+            ProjRectangle box = surface.getBoundsProj();
+            int counter2 = 0;
+            if (box.getX() < 0) {
+                box.setX(0);
+            }
+            if (box.getY() < 0) {
+                box.sety(0);
+            }
+            if (box.getX() + box.getWidth() > WIDTH) {
+                box.setWidth(box.getWidth() - (box.getX() + box.getWidth() - WIDTH));
+            }
+            if (box.getY() + box.getHeight() > HEIGHT) {
+                box.setHeight(box.getHeight() - (box.getY() + box.getHeight() - HEIGHT));
+            }
+
+            for (int i = box.getX(); i < box.getX() + box.getWidth(); i += 40) {
+                for (int j = box.getY(); j < box.getY() + box.getHeight(); j += 40) {
+                    //MyVector projPoint = player.lookAt(new MyVector(i, j, 0), WIDTH, HEIGHT).coords;
+                    Point3D projPoint = new Point3D(i, j, 0);
+                    if (surface.contains(projPoint)) {
+                        g.setColor(Color.BLUE);
+                        g.drawOval(i, j, 5, 5);
+                        counter2++;
+                        //System.out.println(counter2);
+                    }
+                }
+            }
+        }
 
         /* 2 CAMERA SET-UP
         g.setColor(Color.LIGHT_GRAY);
@@ -297,7 +298,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         
                     }
                 }*/
-
                 player.lookAt(points, WIDTH, HEIGHT);
 
                 selected = null;
@@ -327,8 +327,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             
                             if (selected != null) {
                                 Surface newSurface = findNewSurface(surfaces, findLoops(end));
+                                if (newSurface != null) {
+                                    System.out.println(surfaces.size());
+                                    for (Surface surface: surfaces)
+                                        System.out.println(surface);
+                                    System.out.println();
+                                }
                             }
-                                
                             start = end;
                             end = null;
                         }
@@ -350,8 +355,12 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         }
     }
     
+    /*
+        Finds all loops stemming from root, in points map
+    */
     public ArrayList<ArrayList<Point3D>> findLoops(Point3D root) {
         
+        // loops to be returned
         ArrayList<ArrayList<Point3D>> loops = new ArrayList();
         
         ArrayList<ArrayList<Point3D>> potentialLoops = new ArrayList();
@@ -372,26 +381,32 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 
                 potentialLoops.get(lastPotentialLoopIndex).add(cur);
                 
-                int curProgressSize = potentialLoops.get(lastPotentialLoopIndex).size();
-                
-                if (curProgressSize >= 2) {
-                    prev = potentialLoops.get(lastPotentialLoopIndex).get(curProgressSize - 2);
-                }
-                boolean needToDupe = false;
-                for (Point3D neighbor: cur.getNeighbours()) {
-                    if (prev != neighbor) {
-                        if (needToDupe) {
-                            potentialLoops.add(new ArrayList(potentialLoops.get(lastPotentialLoopIndex)));
-                            lastPotentialLoopIndex ++;
-                        } else {
-                            needToDupe = true;
-                        }
-                        stack.add(neighbor);
-                    }
-                }
-                if (!needToDupe && cur.getNeighbours().size() <= 1) {
+                // if the current node only has one child then this is not a loop. ABANDON LOOP!!! 
+                if (cur.getNeighbours().size() == 1) {
                     potentialLoops.remove(lastPotentialLoopIndex);
                     lastPotentialLoopIndex --;
+                } else {
+                    // since the map is doubly-linked, points should-not be re-added to the stack if they are in the current loop's second-last 
+                    // position (the last-added element is the one whose children are being re-added)
+                    // needToDupe corresponds whether the loops are branching out (i.e., ABC, vs ABD -- if more than one child node is being added,
+                    // needToDupe becomes true, and all successive child nodes create new branches
+                    prev = null;
+                    int curProgressSize = potentialLoops.get(lastPotentialLoopIndex).size();
+                    if (curProgressSize >= 2) {
+                        prev = potentialLoops.get(lastPotentialLoopIndex).get(curProgressSize - 2);
+                    }
+                    boolean needToDupe = false;
+                    for (Point3D neighbor: cur.getNeighbours()) {
+                        if (prev != neighbor) {
+                            if (needToDupe) {
+                                potentialLoops.add(new ArrayList(potentialLoops.get(lastPotentialLoopIndex)));
+                                lastPotentialLoopIndex ++;
+                            } else {
+                                needToDupe = true;
+                            }
+                            stack.add(neighbor);
+                        }
+                    }
                 }
             } else {
                 if (curIndex == 0) {
