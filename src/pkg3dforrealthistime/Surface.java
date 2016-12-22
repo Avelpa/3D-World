@@ -14,7 +14,7 @@ import java.util.LinkedList;
  *
  * @author caius
  */
-public class Surface {
+public class Surface  {
 
     private Point3D head;
 
@@ -23,7 +23,7 @@ public class Surface {
     }
 
     public boolean intersects(Point3D point, Point3D start, Point3D end) {
-        if (start.y > end.y) {
+        /*if (start.y > end.y) {
             intersects(point, end, start);
         }
 
@@ -37,6 +37,8 @@ public class Surface {
         double slopeEnd = Math.abs((end.y - point.y) / (end.x - point.x));
         double slopeStart = Math.abs((point.y - start.y) / (point.x - start.x));
 
+        System.out.println(slopeEnd + "--" + slopeStart);
+
         if (end.x < start.x) {
             if (slopeEnd < slopeStart) {
                 return false;
@@ -45,7 +47,8 @@ public class Surface {
             if (slopeEnd > slopeStart) {
                 return false;
             }
-        }
+        }*/
+        
 
         return true;
     }
@@ -171,4 +174,25 @@ public class Surface {
         return new Rectangle((int) xMin, (int) yMin, (int) width, (int) height);
     }
 
+    public int[] getArrayX() {
+        LinkedList<Projection> projList = this.getProjList();
+        int[] xArray = new int[projList.size()];
+
+        for (int i = 0; i < projList.size(); i++) {
+            xArray[i] = (int) projList.get(i).coords.x;
+        }
+
+        return xArray;
+    }
+
+    public int[] getArrayY() {
+        LinkedList<Projection> projList = this.getProjList();
+        int[] yArray = new int[projList.size()];
+
+        for (int i = 0; i < projList.size(); i++) {
+            yArray[i] = (int) projList.get(i).coords.y;
+        }
+
+        return yArray;
+    }
 }
