@@ -189,7 +189,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     if (surface.contains(projPoint)) {
                         g.setColor(Color.BLUE);
                         g.drawOval(i, j, 5, 5);
-                        counter2++;
+                        // counter2++;
                         //System.out.println(counter2);
                     }
                 }
