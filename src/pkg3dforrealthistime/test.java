@@ -15,6 +15,17 @@ import java.util.Stack;
  */
 public class test {
     public static void main(String[] args) {
+//        Node a = new Node('a');
+//        Node b = new Node('b');
+//        ArrayList<Node> one = new ArrayList();
+//        one.add(a);
+//        one.add(b);
+//        
+//        ArrayList<Node> two = new ArrayList();
+//        two.add(b);
+//        two.add(a);
+//        
+//        System.out.println(two.containsAll(one) && one.containsAll(two));
         test test = new test();
     }
     
@@ -27,21 +38,52 @@ public class test {
         Node.link(a, b);
         Node.link(b, c);
         Node.link(c, a);
-        Node.link(c, d);
-        Node.link(d, a);
         
-        HashSet<ArrayList<Node>> results = traverse(a);
-        for (ArrayList<Node> set: results) {
-            for (Node node: set) {
+        HashSet<ArrayList<Node>> surfaces = new HashSet();
+        
+        ArrayList<ArrayList<Node>> results = traverse(a);
+        consolidateSurfaces(surfaces, results);
+        
+        Node.link(d, c);
+        results = traverse(a);
+        consolidateSurfaces(surfaces, results);
+        
+        Node.link(d, a);
+        results = traverse(a);
+        consolidateSurfaces(surfaces, results);
+        
+        for (ArrayList<Node> surface: surfaces) {
+            for (Node node: surface) {
                 System.out.println(node.ID);
             }
             System.out.println();
         }
     }
     
-    public HashSet<ArrayList<Node>> traverse(Node a) {
+    public void consolidateSurfaces(HashSet<ArrayList<Node>> surfaces, ArrayList<ArrayList<Node>> results) {
+        if (results.isEmpty())
+            return;
         
-        HashSet<ArrayList<Node>> results = new HashSet();
+        int curSize = results.get(0).size();
+            
+        for (int i = 0; i < results.size(); i ++) {
+            boolean filtered = false;
+            for (ArrayList<Node> surface: surfaces) {
+                if (surface.containsAll(results.get(i)) && results.get(i).containsAll(surface)) {
+                    filtered = true;
+                    break;
+                }
+            }
+            if (!filtered) {
+                surfaces.add(results.get(i));
+                break;
+            }
+        }
+    }
+    
+    public ArrayList<ArrayList<Node>> traverse(Node a) {
+        
+        ArrayList<ArrayList<Node>> results = new ArrayList();
         
         ArrayList<ArrayList<Node>> progress = new ArrayList();
         progress.add(new ArrayList());
@@ -82,7 +124,7 @@ public class test {
                 }
             } else {
                 if (curIndex == 0) {
-                    results.add(progress.get(progressIndex));
+                    insertIntoListbySize(results, progress.get(progressIndex));
                 }
                 progress.remove(progressIndex);
                 progressIndex --;
@@ -90,7 +132,21 @@ public class test {
         }
         return results;
     }
+    
+    // @params:
+    // lists should be sorted inascending list size
+    private void insertIntoListbySize(ArrayList<ArrayList<Node>> lists, ArrayList<Node> newList) {
+        int insIndex = 0;
+        for (; insIndex < lists.size(); insIndex ++) {
+            if (newList.size() >= lists.get(insIndex).size()) {
+                insIndex ++;
+                break;
+            }
+        }
+        lists.add(insIndex, newList);
+    }
 }
+
 
 class Node {
     public HashSet<Node> neighbors;

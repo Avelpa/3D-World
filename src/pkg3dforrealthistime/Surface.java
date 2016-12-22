@@ -7,6 +7,7 @@ package pkg3dforrealthistime;
 
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 /**
@@ -21,7 +22,6 @@ public class Surface {
         this.head = head;
     }
 
-    //
     public boolean intersects(Point3D point, Point3D start, Point3D end) {
         if (start.y > end.y) {
             intersects(point, end, start);
@@ -109,11 +109,11 @@ public class Surface {
         return new ProjRectangle(xMin, yMin, (int) width, (int) height);
     }
 
-    public LinkedList<Point3D> getList() {
-        LinkedList<Point3D> list = new LinkedList();
+    public ArrayList<Point3D> getList() {
+        ArrayList<Point3D> list = new ArrayList();
         list.add(new Point3D(this.head));
         Point3D current = this.head;
-        ArrayList<Point3D> visited = new ArrayList();
+        HashSet<Point3D> visited = new HashSet();
 
         do {
             visited.add(current);
@@ -129,7 +129,7 @@ public class Surface {
     }
 
     public Rectangle getBounds() {
-        LinkedList<Point3D> pointList = this.getList();
+        ArrayList<Point3D> pointList = this.getList();
 
         double xMax = 0;
         double yMax = 0;

@@ -33,7 +33,18 @@ public class Point3D extends MyVector{
 
         this.neighbours.add(other);
     }
-
+    public void unlinkFrom(Point3D other) {
+        this.neighbours.remove(other);
+    }
+    public static void link(Point3D a, Point3D b) {
+        a.linkTo(b);
+        b.linkTo(a);
+    }
+    public static void unlink(Point3D a, Point3D b) {
+        a.unlinkFrom(b);
+        b.unlinkFrom(a);
+    }
+    
     public HashSet<Point3D> getNeighbours() {
         return this.neighbours;
     }
