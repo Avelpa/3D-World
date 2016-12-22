@@ -52,6 +52,7 @@ public class Surface {
 
     public boolean contains(Point3D point) {
         LinkedList<Projection> pointList = this.getProjList();
+
         int count = 0;
 
         for (int i = 0; i < pointList.size() - 1; i++) {
@@ -59,6 +60,10 @@ public class Surface {
                     new Point3D(pointList.get(i + 1).coords))) {
                 count++;
             }
+        }
+        if (intersects(point, new Point3D(pointList.getLast().coords),
+                new Point3D(pointList.getFirst().coords))) {
+            count++;
         }
         return count % 2 != 0;
     }
@@ -80,7 +85,6 @@ public class Surface {
                     }
                 }
             }
-            
         }
         return list;
     }
@@ -109,6 +113,11 @@ public class Surface {
         double width = xMax.coords.x - xMin.coords.x;
         double height = yMax.coords.y - yMin.coords.y;
 
+        /*System.out.println("xMin: " + xMin.coords + "\n"
+                + "yMin: " + yMin.coords + "\n"
+                + "width: " + (int) width + "\n"
+                + "height: " + (int) height);
+         */
         return new ProjRectangle(xMin, yMin, (int) width, (int) height);
     }
 
