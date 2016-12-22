@@ -413,34 +413,38 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         return loops;
     }
     
-    // returns the last added surface
+    // results must be sorted in terms of list size
     public void addNewSurface(HashSet<Surface> surfaces, ArrayList<ArrayList<Point3D>> results) {
         if (results.isEmpty())
             return;
         
+        // to prevent calling surface.getList() every time and having it re-build its point list, simply store those lists in a map
         HashMap<Surface, ArrayList<Point3D>> surfacePoints = new HashMap();
         
         int numAddedSurfacesOfMinimumSize = 0;
         int minimumSize = 0;
         for (int i = 0; i < results.size(); i ++) {
             
+            // the max number of surfaces has been added (based on surface size)
             if (numAddedSurfacesOfMinimumSize > 0 && results.get(i).size() > minimumSize)
                 break;
             
-            boolean filtered = false;
+            boolean surfaceExists = false;
             for (Surface surface: surfaces) {
                 if (!surfacePoints.containsKey(surface)) {
                     surfacePoints.put(surface, surface.getList());
                 }
+                
+                // since results is sorted in ascending size, can loop forward in search of the correct size
                 if (surfacePoints.get(surface).size() != results.get(i).size())
                     continue;
                 
                 if (surfacePoints.get(surface).containsAll(results.get(i)) && results.get(i).containsAll(surfacePoints.get(surface))) {
-                    filtered = true;
+                    surfaceExists = true;
                     break;
                 }
             }
-            if (!filtered) {
+            if (!surfaceExists) {
                 Surface newSurface = new Surface(results.get(i).get(0));
                 for (Point3D point: results.get(i)) {
                     point.addSurface(newSurface);
@@ -452,6 +456,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             }
         }
     }
+    // Inserts a list into a list of lists by increasing size
     // @params:
     // lists should be sorted inascending list size
     void insertIntoListbySize(ArrayList<ArrayList<Point3D>> ascendingSurfaces, ArrayList<Point3D> potentialSurface) {
@@ -463,12 +468,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             insIndex ++;
         }
         ascendingSurfaces.add(insIndex, potentialSurface);
-        for (ArrayList<Point3D> thing: ascendingSurfaces) {
-            System.out.print(thing.size() + " ");
-        }
-        System.out.println("");
     }
-    
 
     public MyVector spawnVector() {
         return player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(4));
