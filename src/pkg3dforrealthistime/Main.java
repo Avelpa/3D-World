@@ -174,23 +174,21 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             if (box.getY() < 0) {
                 box.sety(0);
             }
-            if (box.getWidth() > WIDTH) {
-                box.setWidth(WIDTH);
+            if (box.getX() + box.getWidth() > WIDTH) {
+                box.setWidth(box.getWidth() - (box.getX() + box.getWidth() - WIDTH));
             }
-            if (box.getHeight() > HEIGHT) {
-                box.setHeight(HEIGHT);
+            if (box.getY() + box.getHeight() > HEIGHT) {
+                box.setHeight(box.getHeight() - (box.getY() + box.getHeight() - HEIGHT));
             }
 
-            for (int i = box.getX(); i < box.getX()+ box.getWidth(); i += 40) {
-                for (int j = box.getY(); j < box.getY()+box.getHeight(); j += 40) {
+            for (int i = box.getX(); i < box.getX() + box.getWidth(); i += 40) {
+                for (int j = box.getY(); j < box.getY() + box.getHeight(); j += 40) {
                     //MyVector projPoint = player.lookAt(new MyVector(i, j, 0), WIDTH, HEIGHT).coords;
                     Point3D projPoint = new Point3D(i, j, 0);
                     if (surface.contains(projPoint)) {
                         g.setColor(Color.BLUE);
                         g.drawOval(i, j, 5, 5);
                         counter2++;
-                        System.out.println(i + "----- "+ j + "\n"
-                        + box.getWidth() + "-----@" + box.getHeight());
                         //System.out.println(counter2);
                     }
                 }
@@ -299,7 +297,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         
                     }
                 }*/
-
                 player.lookAt(points, WIDTH, HEIGHT);
 
                 selected = null;
