@@ -119,7 +119,7 @@ public class Surface {
             visited.add(current);
             for (Point3D point : current.getNeighbours()) {
                 if (point.partOfSurface(this)) {
-                    list.add(new Point3D(point));
+                    list.add(point);
                     current = point;
                     break;
                 }
@@ -154,6 +154,16 @@ public class Surface {
         double height = yMax - yMin;
 
         return new Rectangle((int) xMin, (int) yMin, (int) width, (int) height);
+    }
+    
+    @Override
+    public String toString() {
+        String str = "";
+        ArrayList<Point3D> points = this.getList();
+        for (Point3D point: points) {
+            str += point + " ";
+        }
+        return str;
     }
 
 }

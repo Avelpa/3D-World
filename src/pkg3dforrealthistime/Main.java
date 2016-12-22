@@ -326,21 +326,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             Point3D.link(start, end);
                             
                             if (selected != null) {
-                                
                                 Surface newSurface = findNewSurface(surfaces, findLoops(end));
-                                if (newSurface == null && selected != null) {
-//                                    Point3D.unlink(start, end);
-                                }
-                                System.out.println(surfaces.size());
                             }
-//                            ArrayList<ArrayList<Point3D>> loops = findLoops(end);
-//                            for (ArrayList<Point3D> loop: loops) {
-//                                for (Point3D point: loop) {
-//                                    System.out.print(point + " ");
-//                                }
-//                                System.out.println("");
-//                            }
-
                                 
                             start = end;
                             end = null;
