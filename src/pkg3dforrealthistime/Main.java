@@ -326,13 +326,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             Point3D.link(start, end);
                             
                             if (selected != null) {
-                                Surface newSurface = findNewSurface(surfaces, findLoops(start, end));
-                                if (newSurface != null) {
-                                    System.out.println(surfaces.size());
-                                    for (Surface surface: surfaces)
-                                        System.out.println(surface);
-                                    System.out.println();
-                                }
+                                addNewSurface(surfaces, findLoops(start, end));
                             }
                             start = end;
                             end = null;
@@ -420,13 +414,19 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     }
     
     // returns the last added surface
-    public Surface findNewSurface(HashSet<Surface> surfaces, ArrayList<ArrayList<Point3D>> results) {
+    public void addNewSurface(HashSet<Surface> surfaces, ArrayList<ArrayList<Point3D>> results) {
         if (results.isEmpty())
-            return null;
+            return;
         
         HashMap<Surface, ArrayList<Point3D>> surfacePoints = new HashMap();
         
+        int numAddedSurfacesOfMinimumSize = 0;
+        int minimumSize = 0;
         for (int i = 0; i < results.size(); i ++) {
+            
+            if (numAddedSurfacesOfMinimumSize > 0 && results.get(i).size() > minimumSize)
+                break;
+            
             boolean filtered = false;
             for (Surface surface: surfaces) {
                 if (!surfacePoints.containsKey(surface)) {
@@ -435,26 +435,22 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 if (surfacePoints.get(surface).size() != results.get(i).size())
                     continue;
                 
-                System.out.println("comparing: ");
-                System.out.println(surfacePoints.get(surface));
-                System.out.println(results.get(i));
                 if (surfacePoints.get(surface).containsAll(results.get(i)) && results.get(i).containsAll(surfacePoints.get(surface))) {
-                    System.out.println("failed");
                     filtered = true;
                     break;
                 }
             }
             if (!filtered) {
-                System.out.println("passed");
                 Surface newSurface = new Surface(results.get(i).get(0));
                 for (Point3D point: results.get(i)) {
                     point.addSurface(newSurface);
                 }
                 surfaces.add(newSurface);
-                return newSurface;
+                
+                minimumSize = results.get(i).size();
+                numAddedSurfacesOfMinimumSize ++;
             }
         }
-        return null;
     }
     // @params:
     // lists should be sorted inascending list size
