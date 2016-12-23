@@ -5,6 +5,7 @@
  */
 package pkg3dforrealthistime;
 
+import MyVector.MyVector;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,12 +15,14 @@ import java.util.LinkedList;
  *
  * @author caius
  */
-public class Surface  {
+public class Surface {
 
     private Point3D head;
+    private HashSet<Triangle> triangles;
 
     public Surface(Point3D head) {
         this.head = head;
+        this.triangles = new HashSet<>();
     }
 
     public boolean intersects(Point3D point, Point3D start, Point3D end) {
@@ -37,7 +40,6 @@ public class Surface  {
         double slopeEnd = Math.abs((end.y - point.y) / (end.x - point.x));
         double slopeStart = Math.abs((point.y - start.y) / (point.x - start.x));
 
-
         if (end.x < start.x) {
             if (slopeEnd < slopeStart) {
                 return false;
@@ -47,14 +49,13 @@ public class Surface  {
                 return false;
             }
         }
-        
 
         return true;
     }
 
     public boolean contains(Point3D point) {
-        LinkedList<Projection> pointList = this.getProjList();
-
+        ArrayList<Projection> pointList = this.getProjList();
+        pointList.add(Main.points.get(this.head));
         int count = 0;
 
         for (int i = 0; i < pointList.size() - 1; i++) {
@@ -63,15 +64,12 @@ public class Surface  {
                 count++;
             }
         }
-        if (intersects(point, new Point3D(pointList.getLast().coords),
-                new Point3D(pointList.getFirst().coords))) {
-            count++;
-        }
+
         return count % 2 != 0;
     }
 
-    public LinkedList<Projection> getProjList() {
-        LinkedList<Projection> list = new LinkedList();
+    public ArrayList<Projection> getProjList() {
+        ArrayList<Projection> list = new ArrayList();
         list.add(Main.points.get(this.head));
         Point3D current = this.head;
         ArrayList<Point3D> visited = new ArrayList();
@@ -92,7 +90,7 @@ public class Surface  {
     }
 
     public ProjRectangle getBoundsProj() {
-        LinkedList<Projection> pointList = this.getProjList();
+        ArrayList<Projection> pointList = this.getProjList();
 
         Projection xMax = Main.points.get(this.head);
         Projection yMax = Main.points.get(this.head);
@@ -130,7 +128,6 @@ public class Surface  {
         HashSet<Point3D> visited = new HashSet();
 
         while (!visited.contains(current)) {
-            System.out.println(current);
             visited.add(current);
             for (Point3D point : current.getNeighbours()) {
                 if (!visited.contains(point)) {
@@ -173,8 +170,18 @@ public class Surface  {
         return new Rectangle((int) xMin, (int) yMin, (int) width, (int) height);
     }
 
+    @Override
+    public String toString() {
+        String str = "";
+        ArrayList<Point3D> points = this.getList();
+        for (Point3D point : points) {
+            str += point + " ";
+        }
+        return str;
+    }
+
     public int[] getArrayX() {
-        LinkedList<Projection> projList = this.getProjList();
+        ArrayList<Projection> projList = this.getProjList();
         int[] xArray = new int[projList.size()];
 
         for (int i = 0; i < projList.size(); i++) {
@@ -185,13 +192,83 @@ public class Surface  {
     }
 
     public int[] getArrayY() {
-        LinkedList<Projection> projList = this.getProjList();
+        ArrayList<Projection> projList = this.getProjList();
         int[] yArray = new int[projList.size()];
-
         for (int i = 0; i < projList.size(); i++) {
             yArray[i] = (int) projList.get(i).coords.y;
         }
 
         return yArray;
+    }
+
+    public HashSet<Triangle> getTriangles(ArrayList<Projection> surfaceProj, int interval) {
+        ArrayList<MyVector> surfacePoints = new ArrayList();
+
+        for (Projection proj : surfaceProj) {
+            surfacePoints.add(proj.coords);
+        }
+
+        HashSet<Triangle> triangles = new HashSet(interval * interval);
+
+        MyVector top = surfacePoints.get(0);
+
+        for (MyVector point : surfacePoints) {
+            if (point.y < top.y) {
+                top = point;
+            }
+        }
+
+        surfacePoints.remove(top);
+
+        MyVector vRight = surfacePoints.get(0);
+        MyVector vLeft = surfacePoints.get(1);
+
+        for (MyVector point : surfacePoints) {
+            if (point.x > vRight.x) {
+                vRight = point;
+            } else if (point.x < vLeft.x) {
+                vLeft = point;
+            }
+        }
+
+        MyVector vertex = top;
+
+        MyVector xShift = (vRight.sub(vLeft)).mult((double) 1 / interval);
+        MyVector yShift = (vLeft.sub(vertex)).mult((double) 1 / interval);
+
+        vRight = vertex.add((vRight.sub(vertex)).mult((double) 1 / interval));
+        vLeft = vertex.add(yShift);
+
+        MyVector referenceVertex = vertex;
+        MyVector referenceVRight = vRight;
+        MyVector referenceVLeft = vLeft;
+
+       // System.out.println(referenceVertex + " -- " + referenceVLeft + " -- "
+         //       + referenceVRight);
+         
+        int pattern = 1;
+
+        for (int i = 0; i < interval; i++) {
+            vertex = referenceVertex;
+            vRight = referenceVRight;
+            vLeft = referenceVLeft;
+
+            for (int j = 1; j <= pattern; j++) {
+                if ((j % 2) == 0) {
+                    triangles.add(Triangle.makeTriangle(vertex, vertex.add(xShift), vRight));
+                    vertex = vertex.add(xShift);
+                    vRight = vRight.add(xShift);
+                    vLeft = vLeft.add(xShift);
+                } else {
+                    triangles.add(Triangle.makeTriangle(vertex, vRight, vLeft));
+                }
+            }
+            pattern += 2;
+            referenceVertex = referenceVertex.add(yShift);
+            referenceVLeft = referenceVLeft.add(yShift);
+            referenceVRight = referenceVRight.add(yShift);
+        }
+
+        return triangles;
     }
 }

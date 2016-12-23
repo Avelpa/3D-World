@@ -11,6 +11,7 @@ import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Polygon;
@@ -115,6 +116,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     }
 
     final int OVAL_SIZE = 40;
+    final Font surfaceFont = new Font("comic sans", 11, 20);
 
     @Override
     public void paintComponent(Graphics g) {
@@ -123,6 +125,49 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
         Projection pointProj = null;
         for (Point3D point : points.keySet()) { // need to change null return val
+
+            for (Surface surface : surfaces) {
+                /*g.setColor(Color.CYAN);
+            if (surface.getProjList().getFirst().inRange) {
+                Polygon polygon = new Polygon(surface.getArrayX(), surface.getArrayY(), surface.getProjList().size());
+                g.fillPolygon(polygon);
+            }*/
+
+                for (Triangle triangle : surface.getTriangles(surface.getProjList(), 6)) {
+                    g.drawPolygon(triangle.xpoints, triangle.ypoints, triangle.npoints);
+                }
+
+                ProjRectangle box = surface.getBoundsProj();
+                int counter2 = 0;
+                if (box.getX() < 0) {
+                    box.setX(0);
+                }
+                if (box.getY() < 0) {
+                    box.sety(0);
+                }
+                if (box.getX() + box.getWidth() > WIDTH) {
+                    box.setWidth(box.getWidth() - (box.getX() + box.getWidth() - WIDTH));
+                }
+                if (box.getY() + box.getHeight() > HEIGHT) {
+                    box.setHeight(box.getHeight() - (box.getY() + box.getHeight() - HEIGHT));
+                }
+                g.setColor(Color.ORANGE);
+                /* for (int i = box.getX(); i < box.getX() + box.getWidth(); i += 40) {
+                for (int j = box.getY(); j < box.getY() + box.getHeight(); j += 40) {
+                    
+                    Point3D projPoint = new Point3D(i, j, 0);
+                    if (surface.contains(projPoint)) {
+                        
+                        
+                        
+                        g.fillOval(i, j, 6,6);
+                        // counter2++;
+                        //System.out.println(counter2);
+                        
+                    }
+                }
+            }*/
+            }
 
             pointProj = points.get(point);
 
@@ -168,44 +213,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             g.drawOval((int) (WIDTH / 2 - 20), (int) (HEIGHT / 2 - 20), 40, 40);
         }
 
-        for (Surface surface : surfaces) {
-           /* g.setColor(Color.CYAN);
-            if (surface.getProjList().getFirst().inRange) {
-                Polygon polygon = new Polygon(surface.getArrayX(), surface.getArrayY(), surface.getProjList().size());
-                g.fillPolygon(polygon);
-            }
-            */
-            ProjRectangle box = surface.getBoundsProj();
-            int counter2 = 0;
-            if (box.getX() < 0) {
-                box.setX(0);
-            }
-            if (box.getY() < 0) {
-                box.sety(0);
-            }
-            if (box.getX() + box.getWidth() > WIDTH) {
-                box.setWidth(box.getWidth() - (box.getX() + box.getWidth() - WIDTH));
-            }
-            if (box.getY() + box.getHeight() > HEIGHT) {
-                box.setHeight(box.getHeight() - (box.getY() + box.getHeight() - HEIGHT));
-            }
-            g.setColor(Color.ORANGE);
-             for (int i = box.getX(); i < box.getX() + box.getWidth()-4; i += 1) {
-                for (int j = box.getY(); j < box.getY() + box.getHeight()-4; j += 1) {
-                    
-                    Point3D projPoint = new Point3D(i, j, 0);
-                    if (surface.contains(projPoint)) {
-                        
-                        
-                        
-                        g.fillOval(i, j, 1, 1);
-                        // counter2++;
-                        //System.out.println(counter2);
-                        
-                    }
-                }
-            }
-        }
+        g.setFont(surfaceFont);
+        g.drawString(String.valueOf(surfaces.size()), 10, 30);
 
         /* 2 CAMERA SET-UP
         g.setColor(Color.LIGHT_GRAY);
@@ -337,21 +346,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             Point3D.link(start, end);
 
                             if (selected != null) {
-
-                                Surface newSurface = findNewSurface(surfaces, findLoops(end));
-                                if (newSurface == null && selected != null) {
-//                                    Point3D.unlink(start, end);
-                                }
-                                System.out.println(surfaces.size());
+                                addNewSurface(surfaces, findLoops(start, end));
                             }
-//                            ArrayList<ArrayList<Point3D>> loops = findLoops(end);
-//                            for (ArrayList<Point3D> loop: loops) {
-//                                for (Point3D point: loop) {
-//                                    System.out.print(point + " ");
-//                                }
-//                                System.out.println("");
-//                            }
-
                             start = end;
                             end = null;
                         }
@@ -372,8 +368,12 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         }
     }
 
-    public ArrayList<ArrayList<Point3D>> findLoops(Point3D root) {
+    /*
+        Finds all loops stemming from root, in points map
+     */
+    public ArrayList<ArrayList<Point3D>> findLoops(Point3D root, Point3D connection) {
 
+        // loops to be returned
         ArrayList<ArrayList<Point3D>> loops = new ArrayList();
 
         ArrayList<ArrayList<Point3D>> potentialLoops = new ArrayList();
@@ -394,29 +394,35 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
                 potentialLoops.get(lastPotentialLoopIndex).add(cur);
 
-                int curProgressSize = potentialLoops.get(lastPotentialLoopIndex).size();
-
-                if (curProgressSize >= 2) {
-                    prev = potentialLoops.get(lastPotentialLoopIndex).get(curProgressSize - 2);
-                }
-                boolean needToDupe = false;
-                for (Point3D neighbor : cur.getNeighbours()) {
-                    if (prev != neighbor) {
-                        if (needToDupe) {
-                            potentialLoops.add(new ArrayList(potentialLoops.get(lastPotentialLoopIndex)));
-                            lastPotentialLoopIndex++;
-                        } else {
-                            needToDupe = true;
-                        }
-                        stack.add(neighbor);
-                    }
-                }
-                if (!needToDupe && cur.getNeighbours().size() <= 1) {
+                // if the current node only has one child then this is not a loop. ABANDON LOOP!!! 
+                if (cur.getNeighbours().size() == 1) {
                     potentialLoops.remove(lastPotentialLoopIndex);
                     lastPotentialLoopIndex--;
+                } else {
+                    // since the map is doubly-linked, points should-not be re-added to the stack if they are in the current loop's second-last 
+                    // position (the last-added element is the one whose children are being re-added)
+                    // needToDupe corresponds whether the loops are branching out (i.e., ABC, vs ABD -- if more than one child node is being added,
+                    // needToDupe becomes true, and all successive child nodes create new branches
+                    prev = null;
+                    int curProgressSize = potentialLoops.get(lastPotentialLoopIndex).size();
+                    if (curProgressSize >= 2) {
+                        prev = potentialLoops.get(lastPotentialLoopIndex).get(curProgressSize - 2);
+                    }
+                    boolean needToDupe = false;
+                    for (Point3D neighbor : cur.getNeighbours()) {
+                        if (prev != neighbor) {
+                            if (needToDupe) {
+                                potentialLoops.add(new ArrayList(potentialLoops.get(lastPotentialLoopIndex)));
+                                lastPotentialLoopIndex++;
+                            } else {
+                                needToDupe = true;
+                            }
+                            stack.add(neighbor);
+                        }
+                    }
                 }
             } else {
-                if (curIndex == 0) {
+                if (curIndex == 0 && potentialLoops.get(lastPotentialLoopIndex).contains(connection) && potentialLoops.get(lastPotentialLoopIndex).size() == 3) {
                     insertIntoListbySize(loops, potentialLoops.get(lastPotentialLoopIndex));
                 }
                 potentialLoops.remove(lastPotentialLoopIndex);
@@ -426,47 +432,63 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         return loops;
     }
 
-    // returns the last added surface
-    public Surface findNewSurface(HashSet<Surface> surfaces, ArrayList<ArrayList<Point3D>> results) {
+    // results must be sorted in terms of list size
+    public void addNewSurface(HashSet<Surface> surfaces, ArrayList<ArrayList<Point3D>> results) {
         if (results.isEmpty()) {
-            return null;
+            return;
         }
 
+        // to prevent calling surface.getList() every time and having it re-build its point list, simply store those lists in a map
         HashMap<Surface, ArrayList<Point3D>> surfacePoints = new HashMap();
 
-        int curSize = results.get(0).size();
+        int numAddedSurfacesOfMinimumSize = 0;
+        int minimumSize = 0;
         for (int i = 0; i < results.size(); i++) {
-            boolean filtered = false;
+
+            // the max number of surfaces has been added (based on surface size)
+            if (numAddedSurfacesOfMinimumSize > 0 && results.get(i).size() > minimumSize) {
+                break;
+            }
+
+            boolean surfaceExists = false;
             for (Surface surface : surfaces) {
                 if (!surfacePoints.containsKey(surface)) {
                     surfacePoints.put(surface, surface.getList());
                 }
+
+                // since results is sorted in ascending size, can loop forward in search of the correct size
+                if (surfacePoints.get(surface).size() != results.get(i).size()) {
+                    continue;
+                }
+
                 if (surfacePoints.get(surface).containsAll(results.get(i)) && results.get(i).containsAll(surfacePoints.get(surface))) {
-                    filtered = true;
+                    surfaceExists = true;
                     break;
                 }
             }
-            if (!filtered) {
+            if (!surfaceExists) {
                 Surface newSurface = new Surface(results.get(i).get(0));
                 for (Point3D point : results.get(i)) {
                     point.addSurface(newSurface);
                 }
                 surfaces.add(newSurface);
-                return newSurface;
+
+                minimumSize = results.get(i).size();
+                numAddedSurfacesOfMinimumSize++;
             }
         }
-        return null;
     }
 
+    // Inserts a list into a list of lists by increasing size
     // @params:
     // lists should be sorted inascending list size
     void insertIntoListbySize(ArrayList<ArrayList<Point3D>> ascendingSurfaces, ArrayList<Point3D> potentialSurface) {
         int insIndex = 0;
-        for (; insIndex < ascendingSurfaces.size(); insIndex++) {
-            if (potentialSurface.size() >= ascendingSurfaces.get(insIndex).size()) {
-                insIndex++;
+        while (insIndex < ascendingSurfaces.size()) {
+            if (ascendingSurfaces.get(insIndex).size() >= potentialSurface.size()) {
                 break;
             }
+            insIndex++;
         }
         ascendingSurfaces.add(insIndex, potentialSurface);
     }
