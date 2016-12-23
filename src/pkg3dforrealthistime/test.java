@@ -5,6 +5,7 @@
  */
 package pkg3dforrealthistime;
 
+import MyVector.MyVector;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Stack;
@@ -15,18 +16,14 @@ import java.util.Stack;
  */
 public class test {
     public static void main(String[] args) {
-//        Node a = new Node('a');
-//        Node b = new Node('b');
-//        ArrayList<Node> one = new ArrayList();
-//        one.add(a);
-//        one.add(b);
-//        
-//        ArrayList<Node> two = new ArrayList();
-//        two.add(b);
-//        two.add(a);
-//        
-//        System.out.println(two.containsAll(one) && one.containsAll(two));
-        test test = new test();
+        
+        MyVector normal = new MyVector(1, 0, 0);
+        MyVector planePoint = new MyVector(1, 0, 0);
+        
+        MyVector ray = new MyVector(0.5, 0.5, 0);
+        MyVector rayStart = new MyVector(-1, -1, 0);
+        
+        System.out.println(MyVector.extendUntilPlane(normal, planePoint, ray, rayStart));
     }
     
     public test() {

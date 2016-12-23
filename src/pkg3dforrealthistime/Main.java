@@ -51,6 +51,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     Point3D selected = null;
     Point3D start = null;
     Point3D end = null;
+    MyVector currentPlaneNormal = null;
+    
+    
     boolean mouseDown = false;
     int mouseButton = -1;
     HashMap<Integer, Boolean> keys;
@@ -334,26 +337,52 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
                 if (mouseDown) {
                     if (mouseButton == MouseEvent.BUTTON1) {
-                        Point3D newPoint = selected;
-                        if (newPoint == null) {
-                            newPoint = new Point3D(spawnVector());
-                        }
 
-                        if (start == null) {
-                            start = newPoint;
-                        } else {
-                            end = newPoint;
-                            Point3D.link(start, end);
-
-                            if (selected != null) {
-                                addNewSurface(surfaces, findLoops(start, end));
+                        boolean validPoint = true;
+                        Point3D newPoint = null;
+                        
+                        if (currentPlaneNormal != null) {
+                            if (selected == null) {
+                                newPoint = new Point3D(MyVector.extendUntilPlane(currentPlaneNormal, start, player.getCamera().getNormal(), player.getCamera().getPos()));
+                            } else {
+                                if (!selected.onPlane(currentPlaneNormal, start))
+                                    validPoint = false;
+                                else
+                                    newPoint = selected;
                             }
-                            start = end;
-                            end = null;
+                        } else if (validPoint) {
+                            if (selected == null) {
+                                newPoint = new Point3D(spawnVector());
+                            } else {
+                                newPoint = selected;
+                            }
+                            if (start == null && selected != null && !selected.getSurfaces().isEmpty()) {
+                                currentPlaneNormal = selected.getSurfaces().get(0).getNormal();
+                            } else if (start != null && end != null) {
+                                currentPlaneNormal = newPoint.sub(end).cross(newPoint.sub(start));
+                            }
                         }
-                        points.put(start, player.lookAt(start, WIDTH, HEIGHT));
-                    } else if (mouseButton == MouseEvent.BUTTON3) {
+                        if (validPoint) {
+                            if (start == null) {
+                                start = newPoint;
+                                points.put(start, player.lookAt(start, WIDTH, HEIGHT));
+                            } else {
+                                if (end != null)
+                                    start = end;
+                                end = newPoint;
+                                points.put(end, player.lookAt(end, WIDTH, HEIGHT));
+                                
+                                Point3D.link(start, end);
+                                if (selected != null) {
+                                    addNewSurface(surfaces, findLoops(start, end));
+                                }
+                            }
+                        }
+                    } 
+                    else if (mouseButton == MouseEvent.BUTTON3) {
                         start = null;
+                        end = null;
+                        currentPlaneNormal = null;
                     }
                     mouseDown = false;
                 }
@@ -443,10 +472,14 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
         int numAddedSurfacesOfMinimumSize = 0;
         int minimumSize = 0;
-        for (int i = 0; i < results.size(); i++) {
-
+        
+        ArrayList<Point3D> curResult;
+        for (int i = 0; i < results.size(); i ++) {
+            
+            curResult = results.get(i);
+            
             // the max number of surfaces has been added (based on surface size)
-            if (numAddedSurfacesOfMinimumSize > 0 && results.get(i).size() > minimumSize) {
+            if (numAddedSurfacesOfMinimumSize > 0 && curResult.size() > minimumSize)
                 break;
             }
 
@@ -457,27 +490,26 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 }
 
                 // since results is sorted in ascending size, can loop forward in search of the correct size
-                if (surfacePoints.get(surface).size() != results.get(i).size()) {
+                if (surfacePoints.get(surface).size() != curResult.size())
                     continue;
-                }
-
-                if (surfacePoints.get(surface).containsAll(results.get(i)) && results.get(i).containsAll(surfacePoints.get(surface))) {
+                
+                if (surfacePoints.get(surface).containsAll(curResult) && curResult.containsAll(surfacePoints.get(surface))) {
                     surfaceExists = true;
                     break;
                 }
             }
             if (!surfaceExists) {
-                Surface newSurface = new Surface(results.get(i).get(0));
-                for (Point3D point : results.get(i)) {
+                Surface newSurface = new Surface(curResult.get(0), curResult.get(0).sub(curResult.get(1)).cross(curResult.get(0).sub(curResult.get(2))));
+                for (Point3D point: curResult) {
                     point.addSurface(newSurface);
                 }
                 surfaces.add(newSurface);
-
-                minimumSize = results.get(i).size();
-                numAddedSurfacesOfMinimumSize++;
+                
+                minimumSize = curResult.size();
+                numAddedSurfacesOfMinimumSize ++;
             }
         }
-    }
+    
 
     // Inserts a list into a list of lists by increasing size
     // @params:

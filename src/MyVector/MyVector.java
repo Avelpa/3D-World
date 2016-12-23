@@ -54,6 +54,30 @@ public class MyVector {
     public double dot(MyVector other) {
         return other.x*this.x + other.y*this.y + other.z*this.z;
     }
+    public MyVector cross(MyVector other) {
+        return new MyVector(this.y * other.z - this.z * other.y, -(this.x * other.z - this.z * other.x), this.x * other.y - this.y * other.x);
+    }
+    
+    public static MyVector extendUntilPlane(MyVector normal, MyVector planePoint, MyVector ray, MyVector rayStart) {
+        double rightSide =  normal.dot(planePoint.sub(rayStart));
+        double leftSide = normal.dot(ray);
+        
+        if (leftSide == 0.0) {
+            if (rightSide == 0.0)
+                return ray;
+            return null;
+        }
+        
+        return ray.mult(rightSide / leftSide).add(rayStart);
+    }
+    
+    public boolean onPlane(MyVector normal, MyVector planePoint) {
+        double result = normal.dot(planePoint.sub(this));
+        if (result > 1e-14) {
+            System.out.println(result);
+        }
+        return result <= 1e-14;
+    }
     
     // angle range: [0, 180]
     public static double angleBetween(MyVector a, MyVector b) {

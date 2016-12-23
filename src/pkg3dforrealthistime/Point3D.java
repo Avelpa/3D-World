@@ -6,6 +6,7 @@
 package pkg3dforrealthistime;
 
 import MyVector.MyVector;
+import java.util.ArrayList;
 import java.util.HashSet;
 
 /**
@@ -14,12 +15,12 @@ import java.util.HashSet;
  */
 public class Point3D extends MyVector{
     private HashSet<Point3D> neighbours;
-    private HashSet<Surface> surfaces;
+    private ArrayList<Surface> surfaces;
     
     public Point3D(double x, double y, double z) {
         super(x, y, z);
         neighbours = new HashSet();
-        surfaces = new HashSet();
+        surfaces = new ArrayList();
     }
     public Point3D(MyVector point) {
         this (point.x, point.y, point.z);
@@ -59,5 +60,9 @@ public class Point3D extends MyVector{
     }
     public boolean hasSurface() {
         return !this.surfaces.isEmpty();
+    }
+    
+    public ArrayList<Surface> getSurfaces() {
+        return this.surfaces;
     }
 }

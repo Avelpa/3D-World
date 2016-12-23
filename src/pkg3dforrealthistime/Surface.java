@@ -18,11 +18,11 @@ import java.util.LinkedList;
 public class Surface {
 
     private Point3D head;
-    private HashSet<Triangle> triangles;
+    private MyVector normal;
 
-    public Surface(Point3D head) {
+    public Surface(Point3D head, MyVector normal) {
         this.head = head;
-        this.triangles = new HashSet<>();
+        this.normal = normal;
     }
 
     public boolean intersects(Point3D point, Point3D start, Point3D end) {
@@ -169,7 +169,11 @@ public class Surface {
 
         return new Rectangle((int) xMin, (int) yMin, (int) width, (int) height);
     }
-
+    
+    public MyVector getNormal() {
+        return this.normal;
+    }
+    
     @Override
     public String toString() {
         String str = "";
