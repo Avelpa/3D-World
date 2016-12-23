@@ -116,11 +116,6 @@ public class Surface {
         double width = xMax.coords.x - xMin.coords.x;
         double height = yMax.coords.y - yMin.coords.y;
 
-        /*System.out.println("xMin: " + xMin.coords + "\n"
-                + "yMin: " + yMin.coords + "\n"
-                + "width: " + (int) width + "\n"
-                + "height: " + (int) height);
-         */
         return new ProjRectangle(xMin, yMin, (int) width, (int) height);
     }
 
