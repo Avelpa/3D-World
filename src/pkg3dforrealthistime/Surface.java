@@ -5,6 +5,7 @@
  */
 package pkg3dforrealthistime;
 
+import MyVector.MyVector;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -17,9 +18,11 @@ import java.util.LinkedList;
 public class Surface {
 
     private Point3D head;
+    private MyVector normal;
 
-    public Surface(Point3D head) {
+    public Surface(Point3D head, MyVector normal) {
         this.head = head;
+        this.normal = normal;
     }
 
     public boolean intersects(Point3D point, Point3D start, Point3D end) {
@@ -168,6 +171,10 @@ public class Surface {
         double height = yMax - yMin;
 
         return new Rectangle((int) xMin, (int) yMin, (int) width, (int) height);
+    }
+    
+    public MyVector getNormal() {
+        return this.normal;
     }
     
     @Override
