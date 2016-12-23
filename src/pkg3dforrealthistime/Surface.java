@@ -247,9 +247,6 @@ public class Surface {
         MyVector referenceVRight = vRight;
         MyVector referenceVLeft = vLeft;
 
-       // System.out.println(referenceVertex + " -- " + referenceVLeft + " -- "
-         //       + referenceVRight);
-         
         int pattern = 1;
 
         for (int i = 0; i < interval; i++) {

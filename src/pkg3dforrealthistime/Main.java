@@ -135,8 +135,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 Polygon polygon = new Polygon(surface.getArrayX(), surface.getArrayY(), surface.getProjList().size());
                 g.fillPolygon(polygon);
             }*/
-
-                for (Triangle triangle : surface.getTriangles(surface.getProjList(), 6)) {
+                
+                for (Triangle triangle : surface.getTriangles(surface.getProjList(), 7)) {
                     g.drawPolygon(triangle.xpoints, triangle.ypoints, triangle.npoints);
                 }
 
@@ -473,10 +473,14 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         int numAddedSurfacesOfMinimumSize = 0;
         int minimumSize = 0;
         
-        ArrayList<Point3D> curResult;
+        ArrayList<Point3D> curResult = null;
         for (int i = 0; i < results.size(); i ++) {
             
             curResult = results.get(i);
+            
+            // the max number of surfaces has been added (based on surface size)
+            if (numAddedSurfacesOfMinimumSize > 0 && curResult.size() > minimumSize)
+                break;
             
             // the max number of surfaces has been added (based on surface size)
             if (numAddedSurfacesOfMinimumSize > 0 && curResult.size() > minimumSize)
