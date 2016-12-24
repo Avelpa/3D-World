@@ -12,7 +12,6 @@ package pkg3dforrealthistime;
 public class ProjRectangle {
 
     private Projection projX;
-
     private Projection projY;
     private int width;
     private int height;
