@@ -169,11 +169,11 @@ public class Surface {
 
         return new Rectangle((int) xMin, (int) yMin, (int) width, (int) height);
     }
-    
+
     public MyVector getNormal() {
         return this.normal;
     }
-    
+
     @Override
     public String toString() {
         String str = "";
@@ -205,71 +205,117 @@ public class Surface {
         return yArray;
     }
 
-    public HashSet<Triangle> getTriangles(ArrayList<Projection> surfaceProj, int interval) {
+    public Projection getPolygonCenter(ArrayList<Projection> surfaceProj) {
+        Projection centerPoint = new Projection();
+        centerPoint.coords = new MyVector(0, 0, 0);
+
+        surfaceProj.forEach((proj) -> {
+            centerPoint.coords = centerPoint.coords.add(proj.coords);
+        });
+
+        centerPoint.coords = centerPoint.coords.mult(1d / surfaceProj.size());
+
+        return centerPoint;
+    }
+
+    public ArrayList<ArrayList<Projection>> getMainTriangles(ArrayList<Projection> surfaceProj) {
+
+        ArrayList<ArrayList<Projection>> listProjList = new ArrayList<>();
+
+        if (surfaceProj.size() == 3) {
+            listProjList.add(surfaceProj);
+            return listProjList;
+        }
+
+        Projection centerPoint = getPolygonCenter(surfaceProj);
+
+        surfaceProj.add(surfaceProj.get(0));
+
+        ArrayList<Projection> temp = new ArrayList();
+
+        for (int i = 0; i < surfaceProj.size() - 1; i++) {
+            temp.clear();
+            int counter = 0;
+            temp.add(surfaceProj.get(i));
+            temp.add(surfaceProj.get(i + 1));
+            temp.add(centerPoint);
+
+            listProjList.add((ArrayList<Projection>) temp.clone());
+        }
+        return listProjList;
+    }
+
+    public HashSet<Triangle> getTriangles(ArrayList<Projection> initialProj, int interval) {
+
+        HashSet<Triangle> triangles = new HashSet();
+
+        ArrayList<ArrayList<Projection>> surfaceProjList = getMainTriangles(initialProj);
+
         ArrayList<MyVector> surfacePoints = new ArrayList();
 
-        for (Projection proj : surfaceProj) {
-            surfacePoints.add(proj.coords);
-        }
+        for (ArrayList<Projection> surfaceProj : surfaceProjList) {
+            int counter = 0;
 
-        HashSet<Triangle> triangles = new HashSet(interval * interval);
+            surfacePoints.clear();
 
-        MyVector top = surfacePoints.get(0);
-
-        for (MyVector point : surfacePoints) {
-            if (point.y < top.y) {
-                top = point;
+            for (Projection proj : surfaceProj) {
+                surfacePoints.add(proj.coords);
             }
-        }
 
-        surfacePoints.remove(top);
+            MyVector vertex = surfacePoints.get(0);
 
-        MyVector vRight = surfacePoints.get(0);
-        MyVector vLeft = surfacePoints.get(1);
-
-        for (MyVector point : surfacePoints) {
-            if (point.x > vRight.x) {
-                vRight = point;
-            } else if (point.x < vLeft.x) {
-                vLeft = point;
-            }
-        }
-
-        MyVector vertex = top;
-
-        MyVector xShift = (vRight.sub(vLeft)).mult((double) 1 / interval);
-        MyVector yShift = (vLeft.sub(vertex)).mult((double) 1 / interval);
-
-        vRight = vertex.add((vRight.sub(vertex)).mult((double) 1 / interval));
-        vLeft = vertex.add(yShift);
-
-        MyVector referenceVertex = vertex;
-        MyVector referenceVRight = vRight;
-        MyVector referenceVLeft = vLeft;
-
-        int pattern = 1;
-
-        for (int i = 0; i < interval; i++) {
-            vertex = referenceVertex;
-            vRight = referenceVRight;
-            vLeft = referenceVLeft;
-
-            for (int j = 1; j <= pattern; j++) {
-                if ((j % 2) == 0) {
-                    triangles.add(Triangle.makeTriangle(vertex, vertex.add(xShift), vRight));
-                    vertex = vertex.add(xShift);
-                    vRight = vRight.add(xShift);
-                    vLeft = vLeft.add(xShift);
-                } else {
-                    triangles.add(Triangle.makeTriangle(vertex, vRight, vLeft));
+            for (MyVector point : surfacePoints) {
+                if (point.y < vertex.y) {
+                    vertex = point;
                 }
             }
-            pattern += 2;
-            referenceVertex = referenceVertex.add(yShift);
-            referenceVLeft = referenceVLeft.add(yShift);
-            referenceVRight = referenceVRight.add(yShift);
-        }
 
+            surfacePoints.remove(vertex);
+
+            MyVector vRight = surfacePoints.get(0);
+            MyVector vLeft = surfacePoints.get(1);
+
+            for (MyVector point : surfacePoints) {
+                if (point.x > vRight.x) {
+                    vRight = point;
+                } else if (point.x < vLeft.x) {
+                    vLeft = point;
+                }
+            }
+
+            MyVector xShift = (vRight.sub(vLeft)).mult((double) 1 / interval);
+            MyVector yShift = (vLeft.sub(vertex)).mult((double) 1 / interval);
+
+            vRight = vertex.add((vRight.sub(vertex)).mult((double) 1 / interval));
+            vLeft = vertex.add(yShift);
+
+            MyVector referenceVertex = vertex;
+            MyVector referenceVRight = vRight;
+            MyVector referenceVLeft = vLeft;
+
+            int pattern = 1;
+
+            for (int i = 0; i < interval; i++) {
+                vertex = referenceVertex;
+                vRight = referenceVRight;
+                vLeft = referenceVLeft;
+
+                for (int j = 1; j <= pattern; j++) {
+                    if ((j % 2) == 0) {
+                        triangles.add(Triangle.makeTriangle(vertex, vertex.add(xShift), vRight));
+                        vertex = vertex.add(xShift);
+                        vRight = vRight.add(xShift);
+                        vLeft = vLeft.add(xShift);
+                    } else {
+                        triangles.add(Triangle.makeTriangle(vertex, vRight, vLeft));
+                    }
+                }
+                pattern += 2;
+                referenceVertex = referenceVertex.add(yShift);
+                referenceVLeft = referenceVLeft.add(yShift);
+                referenceVRight = referenceVRight.add(yShift);
+            }
+        }
         return triangles;
     }
 }
