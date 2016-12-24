@@ -5,6 +5,7 @@
  */
 package pkg3dforrealthistime;
 
+import MyVector.MyMatrix;
 import MyVector.MyVector;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -17,14 +18,24 @@ import java.util.Stack;
 public class test {
     public static void main(String[] args) {
         
-        MyVector normal = new MyVector(1, 0, 0);
-        MyVector planePoint = new MyVector(1, 0, 0);
+//        MyVector test = new MyVector(-0.012750000000000003,-0.0085,0.007361215932167728);
+//        MyVector test2 = new MyVector(-0.012750000000000003,0.008499999999999997,0.007361215932167728);
+//        
+//        System.out.println(test.projectOntoPlane(new MyVector(0, 100, 0), MyVector.ZERO));
+//        System.out.println(test2.projectOntoPlane(new MyVector(0, 100, 0), MyVector.ZERO));
         
-        MyVector ray = new MyVector(0.5, 0.5, 0);
-        MyVector rayStart = new MyVector(-1, -1, 0);
         
-        System.out.println(MyVector.extendUntilPlane(normal, planePoint, ray, rayStart));
+        final int SCR_WIDTH = 800, SCR_HEIGHT = 800;
+        final int PPM = 100;
+        
+        Camera cam = new Camera(0.017, 60, SCR_WIDTH, SCR_HEIGHT, PPM);
+        
+        MyVector lineA = new MyVector(-10, 0, 0);
+        MyVector lineB = new MyVector(-10, 100, 2);
+        
+        System.out.println(cam.lineIsInFov(cam.getProjection(lineA), cam.getProjection(lineB), lineA, lineB));
     }
+    
     
     public test() {
         Node a = new Node('a');

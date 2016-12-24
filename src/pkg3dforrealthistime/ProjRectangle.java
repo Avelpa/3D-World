@@ -25,19 +25,19 @@ public class ProjRectangle {
     }
 
     public int getX() {
-        return (int) projX.coords.x;
+        return (int) projX.screenCoords.x;
     }
 
     public int getY() {
-        return (int) projY.coords.y;
+        return (int) projY.screenCoords.y;
     }
 
     public void setX(double x) {
-        this.projX.coords.x = x;
+        this.projX.screenCoords.x = x;
     }
 
     public void sety(double y) {
-        this.projY.coords.y = y;
+        this.projY.screenCoords.y = y;
     }
 
     public int getWidth() {

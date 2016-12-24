@@ -59,8 +59,8 @@ public class Surface {
         int count = 0;
 
         for (int i = 0; i < pointList.size() - 1; i++) {
-            if (intersects(point, new Point3D(pointList.get(i).coords),
-                    new Point3D(pointList.get(i + 1).coords))) {
+            if (intersects(point, new Point3D(pointList.get(i).screenCoords),
+                    new Point3D(pointList.get(i + 1).screenCoords))) {
                 count++;
             }
         }
@@ -98,20 +98,20 @@ public class Surface {
         Projection yMin = Main.points.get(this.head);
 
         for (Projection point : pointList) {
-            if (point.coords.x > xMax.coords.x) {
+            if (point.screenCoords.x > xMax.screenCoords.x) {
                 xMax = point;
-            } else if (point.coords.x < xMin.coords.x) {
+            } else if (point.screenCoords.x < xMin.screenCoords.x) {
                 xMin = point;
             }
-            if (point.coords.y > yMax.coords.y) {
+            if (point.screenCoords.y > yMax.screenCoords.y) {
                 yMax = point;
-            } else if (point.coords.y < yMin.coords.y) {
+            } else if (point.screenCoords.y < yMin.screenCoords.y) {
                 yMin = point;
             }
         }
 
-        double width = xMax.coords.x - xMin.coords.x;
-        double height = yMax.coords.y - yMin.coords.y;
+        double width = xMax.screenCoords.x - xMin.screenCoords.x;
+        double height = yMax.screenCoords.y - yMin.screenCoords.y;
 
         return new ProjRectangle(xMin, yMin, (int) width, (int) height);
     }
@@ -184,7 +184,7 @@ public class Surface {
         int[] xArray = new int[projList.size()];
 
         for (int i = 0; i < projList.size(); i++) {
-            xArray[i] = (int) projList.get(i).coords.x;
+            xArray[i] = (int) projList.get(i).screenCoords.x;
         }
 
         return xArray;
@@ -194,7 +194,7 @@ public class Surface {
         ArrayList<Projection> projList = this.getProjList();
         int[] yArray = new int[projList.size()];
         for (int i = 0; i < projList.size(); i++) {
-            yArray[i] = (int) projList.get(i).coords.y;
+            yArray[i] = (int) projList.get(i).screenCoords.y;
         }
 
         return yArray;
@@ -204,7 +204,7 @@ public class Surface {
         ArrayList<MyVector> surfacePoints = new ArrayList();
 
         for (Projection proj : surfaceProj) {
-            surfacePoints.add(proj.coords);
+            surfacePoints.add(proj.screenCoords);
         }
 
         HashSet<Triangle> triangles = new HashSet(interval * interval);

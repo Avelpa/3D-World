@@ -22,13 +22,16 @@ public class Camera {
 
     private final double FOV;
     private final int PPM;
+    private final double SCR_WIDTH, SCR_HEIGHT;
     
-    public Camera(double focalLength, double FOV, int PPM) {
+    public Camera(double focalLength, double FOV, double SCR_WIDTH, double SCR_HEIGHT, int PPM) {
         this.position = new MyVector(0, 0, 0);
         this.normal = new MyVector(-1, 0, 0).mult(focalLength);
         this.x2D = new MyVector(0, 1, 0);
         this.y2D = new MyVector(0, 0, 1);
         
+        this.SCR_WIDTH = SCR_WIDTH;
+        this.SCR_HEIGHT = SCR_HEIGHT;
         this.FOV = FOV;
         this.PPM = PPM;
     }
@@ -60,17 +63,13 @@ public class Camera {
         this.moveBy(this.normal.unit().mult(-distance));
     }
     
-    public Projection getProjection(MyVector subject, int SCR_WIDTH, int SCR_HEIGHT) {
-        
+    public Projection getProjection(MyVector subject) {
         Projection ret = new Projection();
         ret.inRange = true;
         ret.inFront = true;
         
-        MyVector scaledUnit = subject.sub(this.position).unit().mult(this.normal.length());
-        
-        double aspectRatio = (double)SCR_WIDTH / SCR_HEIGHT;
-        double horFovRad = Math.toRadians(this.FOV);
-        double vertFovRad = horFovRad / aspectRatio;
+        double horFovRad = Math.toRadians(this.getHorizontalFov());
+        double vertFovRad = Math.toRadians(this.getVerticalFov());
         
         MyVector relSubj = subject.sub(this.position);
         
@@ -78,13 +77,16 @@ public class Camera {
         double horRange = extendedNormal.length() * Math.tan(horFovRad / 2);
         double vertRange = extendedNormal.length() * Math.tan(vertFovRad / 2);
         
+        ret.horHalfWidth = horRange;
+        ret.vertHalfHeight = vertRange;
+        
         MyVector projNY = relSubj.projectOntoPlane(this.y2D, MyVector.ZERO);
         
         if (projNY.scalarProject(this.normal) <= 0)
             ret.inFront = false;
         
         double nyAngle = MyVector.angleBetween(projNY, this.normal);
-        if (nyAngle > this.FOV / 2)
+        if (nyAngle > this.getHorizontalFov() / 2)
             ret.inRange = false;
         
         MyVector horVec = projNY.sub(extendedNormal);
@@ -95,7 +97,7 @@ public class Camera {
         MyVector projNZ = relSubj.projectOntoPlane(this.x2D, MyVector.ZERO);
         
         double nzAngle = MyVector.angleBetween(projNZ, this.normal);
-        if (nzAngle > this.FOV / aspectRatio / 2)
+        if (nzAngle > this.getVerticalFov() / 2)
             ret.inRange = false;
         
         MyVector vertVec = projNZ.sub(extendedNormal);
@@ -103,10 +105,58 @@ public class Camera {
         double vertRatioSign = Math.signum(vertVec.scalarProject(this.y2D));
         vertRatio *= vertRatioSign;
         
-        ret.coords = cartesianToScreen(new MyVector(0, horRatio * SCR_WIDTH / this.PPM / 2, vertRatio * SCR_HEIGHT / this.PPM / 2), SCR_WIDTH, SCR_HEIGHT);
+        ret.cartesianCoords = new MyVector(horRatio * SCR_WIDTH / this.PPM / 2, vertRatio * SCR_HEIGHT / this.PPM / 2, 0);
+        ret.screenCoords = cartesianToScreen(ret.cartesianCoords, SCR_WIDTH, SCR_HEIGHT);
         
         return ret;
     }
+    
+    public boolean lineIsInFov(Projection aProj, Projection bProj, MyVector a, MyVector b) {
+        if (aProj.inRange || bProj.inRange)
+            return true;
+        if (!aProj.inFront && !bProj.inFront)
+            return false;
+        
+        MyVector fovTopLeft = MyMatrix.rotate(MyMatrix.rotate(this.getNormal(), this.getY2D(), MyVector.ZERO, this.getHorizontalFov() / 2), this.getX2D(), MyVector.ZERO, this.getVerticalFov() / 2);
+        MyVector fovTopRight = MyMatrix.rotate(MyMatrix.rotate(this.getNormal(), this.getY2D(), MyVector.ZERO, -this.getHorizontalFov() / 2), this.getX2D(), MyVector.ZERO, this.getVerticalFov() / 2);
+        MyVector fovBottomLeft = MyMatrix.rotate(MyMatrix.rotate(this.getNormal(), this.getY2D(), MyVector.ZERO, this.getHorizontalFov() / 2), this.getX2D(), MyVector.ZERO, -this.getVerticalFov() / 2);
+        MyVector fovBottomRight = MyMatrix.rotate(MyMatrix.rotate(this.getNormal(), this.getY2D(), MyVector.ZERO, -this.getHorizontalFov() / 2), this.getX2D(), MyVector.ZERO, -this.getVerticalFov() / 2);
+
+        if (lineIntersectsFovSegment(a, b, fovTopLeft, fovTopRight) || 
+            lineIntersectsFovSegment(a, b, fovTopLeft, fovBottomLeft) || 
+            lineIntersectsFovSegment(a, b, fovBottomLeft, fovBottomRight) || 
+            lineIntersectsFovSegment(a, b, fovTopRight, fovBottomRight))
+            return true;
+        return false;
+    }
+    
+    private boolean lineIntersectsFovSegment(MyVector lineA, MyVector lineB, MyVector ray1, MyVector ray2) {
+        // line is in between rays
+        MyVector line = lineB.sub(lineA);
+        MyVector ray1Proj = ray1.projectOntoPlane(line, MyVector.ZERO);
+        MyVector ray2Proj = ray2.projectOntoPlane(line, MyVector.ZERO);
+        MyVector lineProj = lineA.projectOntoPlane(line, this.getPos()).sub(this.getPos());
+        
+        double rayAngle = MyVector.angleBetween(ray1Proj, ray2Proj);
+        double angle = MyVector.angleBetween(lineProj, ray1Proj);
+        if (angle > rayAngle)
+            return false;
+        angle = MyVector.angleBetween(lineProj, ray2Proj);
+        if (angle > rayAngle)
+            return false;
+        
+        // line is in ray plane
+        MyVector planeNormal = ray1.cross(ray2);
+        double fromTop = lineA.sub(this.getPos()).scalarProject(planeNormal);
+        if (fromTop == 0)
+            return true;
+        double fromBottom = lineB.sub(this.getPos()).scalarProject(planeNormal.mult(-1));
+        if (fromBottom == 0)
+            return true;
+        
+        return fromBottom > 0 == fromTop > 0;
+    }
+    
     /* -- old projection that used angle ratio instead of distance ratios
     public MyVector getProjection(MyVector subject, double scrWidth, double scrHeight) {
         MyVector scaledUnit = subject.sub(this.position).unit().mult(this.normal.length());
@@ -159,14 +209,17 @@ public class Camera {
     public MyVector getPos() {
         return this.position;
     }
-    public double getFov() {
+    public double getHorizontalFov() {
         return this.FOV;
     }
+    public double getVerticalFov() {
+        return this.SCR_HEIGHT / this.SCR_WIDTH * this.FOV;
+    }
     
-    private MyVector cartesianToScreen(MyVector vector, int SCR_WIDTH, int SCR_HEIGHT) {
+    private MyVector cartesianToScreen(MyVector vector, double SCR_WIDTH, double SCR_HEIGHT) {
         
-        double x = SCR_WIDTH / 2 + vector.y * this.PPM;
-        double y = SCR_HEIGHT / 2 - vector.z * this.PPM;
+        double x = SCR_WIDTH / 2 + vector.x * this.PPM;
+        double y = SCR_HEIGHT / 2 - vector.y * this.PPM;
         
         return new MyVector(x, y, 0);
     }

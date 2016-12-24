@@ -38,13 +38,13 @@ public class Spectator {
         this.ABSOLUTE_VERTICAL = MyMatrix.rotate(MyVector.Z, this.camera.getX2D(), MyVector.ZERO, YawPitchRoll.y);
     }
     
-    public void lookAt(HashMap<Point3D, Projection> points, int SCR_WIDTH, int SCR_HEIGHT) {
+    public void lookAt(HashMap<Point3D, Projection> points) {
         for (Point3D point: points.keySet()) {
-            points.put(point, this.camera.getProjection(point, SCR_WIDTH, SCR_HEIGHT));
+            points.put(point, this.camera.getProjection(point));
         }
     }
-    public Projection lookAt(MyVector point, int SCR_WIDTH, int SCR_HEIGHT) {
-        return this.camera.getProjection(point, SCR_WIDTH, SCR_HEIGHT);
+    public Projection lookAt(MyVector point) {
+        return this.camera.getProjection(point);
     }
     
     public void setAccel(double accel) {

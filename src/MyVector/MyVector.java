@@ -78,6 +78,73 @@ public class MyVector {
         }
         return result <= 1e-14;
     }
+
+//    // (x, y, z)
+//    public boolean segmentsIntersect3D(MyVector line1A, MyVector line1B, MyVector line2A, MyVector line2B) {
+//        System.err.println("segmentsIntersect3D() not implemented yet.");
+//        return false;
+//    }
+    // (x, y, 0)
+    public static boolean segmentsIntersect2D(MyVector line1A, MyVector line1B, MyVector line2A, MyVector line2B) {
+        MyVector perpSlopeA = getPerpSlope2D(line1B.sub(line1A));
+        MyVector perpSlopeB = null;
+        
+        // if both lines are single points:
+        if ((line1A.x == line1B.x && line1A.y == line1B.y) && (line2A.x == line2B.x && line2A.y == line2B.y)) {
+            System.out.println("early");
+            System.out.println(line1A + " " + line1B + " | " + line2A + " " + line2B);
+            return line1A.x == line2A.x && line1A.y == line2A.y;
+	}
+        
+        char baseLine = '\0';
+        
+        // if one of the lines is a point, should slope of line as othe rperp
+        if ((line1A.x == line1B.x && line1A.y == line1B.y) || (line2A.x == line2B.x && line2A.y == line2B.y)) {
+            if (line1A.x == line1B.x && line1A.y == line1B.y) {
+                baseLine = 'B';
+            } else {
+                baseLine = 'A';
+            }
+        } else if (line2B.sub(line2A).scalarProject(perpSlopeA) <= 1e-14) { // if lines are collinear, use one of the lines as a perpendicular slope
+            baseLine = 'A';
+        }
+        
+        if (baseLine == 'A') {
+            perpSlopeB = line1B.sub(line1A);
+        } else {
+            perpSlopeA = line2B.sub(line2A);
+            perpSlopeB = getPerpSlope2D(line2B.sub(line2A));
+        }
+        
+        System.out.println(baseLine);
+        
+        double proj1A = line1A.scalarProject(perpSlopeA);
+        double proj1B = line1B.scalarProject(perpSlopeA);
+        double proj2A = line2A.scalarProject(perpSlopeA);
+        double proj2B = line2B.scalarProject(perpSlopeA);
+        
+        if (!segmentsIntersect1D(proj1A, proj1B, proj2A, proj2B))
+            return false;
+        
+        proj1A = line1A.scalarProject(perpSlopeB);
+        proj1B = line1B.scalarProject(perpSlopeB);
+        proj2A = line2A.scalarProject(perpSlopeB);
+        proj2B = line2B.scalarProject(perpSlopeB);
+        
+        if (!segmentsIntersect1D(proj1A, proj1B, proj2A, proj2B))
+            return false;
+        
+        return true;
+    }
+    public static boolean segmentsIntersect1D(double a1, double a2, double b1, double b2) {
+        return Math.min(b1, b2) <= Math.max(a1, a2) && Math.max(b1, b2) >= Math.min(a1, a2);
+    }
+    
+    // (x, y, 0)
+    private static MyVector getPerpSlope2D(MyVector line) {
+        return new MyVector(line.y, -line.x, 0);
+    }
+    
     
     // angle range: [0, 180]
     public static double angleBetween(MyVector a, MyVector b) {
