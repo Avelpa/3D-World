@@ -14,6 +14,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
+import java.awt.Polygon;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
@@ -135,6 +136,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     @Override
     public void paintComponent(Graphics g) {
         int linesDrawn = 0;
+        int trianglesDrawn = 0;
+        
         g.clearRect(0, 0, (int)WIDTH, (int)HEIGHT);
 
 //        if (observer != null) {
@@ -193,27 +196,43 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 //        // end second camera
 
         HashSet<Point3D> visitedNeigbhors = new HashSet();
+        HashSet<Surface> drawnSurfaces = new HashSet();
         Projection pointProj = null;
         for (Point3D point : points.keySet()) {
 
             for (Surface surface : surfaces) {
+                
+                if (drawnSurfaces.contains(surface))
+                    continue;
+                drawnSurfaces.add(surface);
+                
                 g.setColor(Color.BLACK);
                 /*g.setColor(Color.CYAN);
                 if (surface.getProjList().getFirst().inRange) {
                 Polygon polygon = new Polygon(surface.getArrayX(), surface.getArrayY(), surface.getProjList().size());
                 g.fillPolygon(polygon);
                 }*/
-
-                surface.getTriangles(surface.getProjList(points), tessellationInterval).forEach((triangle) -> {
-                   // System.out.println("----BEGIN");
-                    //System.out.println(triangle.getBounds().x);
-                    //System.out.println("----END");
-                    g.setColor(Color.CYAN);
-                    g.fillPolygon(triangle);
-                    g.setColor(Color.BLACK);
-                    g.drawPolygon(triangle.xpoints, triangle.ypoints, triangle.npoints);
-                });
-
+                
+                for (Triangle triangle: surface.getTriangles()) {
+                    boolean inRange = false;
+                    Projection[] projectedCorners = triangle.getProjectedCorners(player.getCamera());
+                    for (int i = 0; i < 3; i ++) {
+                        if (player.getCamera().lineIsInFov(projectedCorners[i], projectedCorners[i == 2 ? 0 : i], triangle.getCorners()[i], triangle.getCorners()[i == 2 ? 0 : i]))
+                        {
+                            inRange = true;
+                            break;
+                        }
+                    }
+                    if (inRange) {
+                        Polygon projectedTriangle = triangle.getProjection(player.getCamera());
+                        trianglesDrawn ++;
+                        g.setColor(Color.CYAN);
+                        g.fillPolygon(projectedTriangle);
+                        g.setColor(Color.BLACK);
+                        g.drawPolygon(projectedTriangle);
+                    }
+                }
+                
                 /*ProjRectangle box = surface.getBoundsProj();
                 int counter2 = 0;
                 if (box.getX() < 0) {
@@ -278,10 +297,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         }
 
         g.setFont(surfaceFont);
-        g.drawString(String.valueOf(surfaces.size()), 10, 30);
+        g.drawString("surfaces: " + String.valueOf(surfaces.size()), 10, 30);
         
         g.setFont(surfaceFont);
-        g.drawString(String.valueOf(linesDrawn), 30, 30);
+        g.drawString("lines: " + String.valueOf(linesDrawn), 10, 60);
+        
+        g.setFont(surfaceFont);
+        g.drawString("triangles: " + String.valueOf(trianglesDrawn), 10, 90);
     }
 
     public void run() {
@@ -470,7 +492,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     }
 
     // results must be sorted in terms of list size
-    public void addNewSurface(HashSet<Surface> surfaces, ArrayList<ArrayList<Point3D>> results) {
+    public void addNewSurface(HashSet<Surface> surfaces, ArrayList<ArrayList<Point3D>> results) { 
         if (results.isEmpty()) {
             return;
         }
@@ -480,48 +502,41 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
         int numAddedSurfacesOfMinimumSize = 0;
         int minimumSize = 0;
-
+        
         ArrayList<Point3D> curResult = null;
-        for (int i = 0; i < results.size(); i++) {
-
+        for (int i = 0; i < results.size(); i ++) {
             curResult = results.get(i);
-
+            
             // the max number of surfaces has been added (based on surface size)
-            if (numAddedSurfacesOfMinimumSize > 0 && curResult.size() > minimumSize) {
+            if (numAddedSurfacesOfMinimumSize > 0 && curResult.size() > minimumSize)
                 break;
-            }
-
+            
             // the max number of surfaces has been added (based on surface size)
-            if (numAddedSurfacesOfMinimumSize > 0 && curResult.size() > minimumSize) {
+            if (numAddedSurfacesOfMinimumSize > 0 && curResult.size() > minimumSize)
                 break;
-            }
-        }
 
-        boolean surfaceExists = false;
-        for (Surface surface : surfaces) {
-            if (!surfacePoints.containsKey(surface)) {
-                surfacePoints.put(surface, surface.getList());
-            }
+            boolean surfaceExists = false;
+            for (Surface surface : surfaces) {
+                if (!surfacePoints.containsKey(surface)) {
+                    surfacePoints.put(surface, surface.getList());
+                }
 
-            // since results is sorted in ascending size, can loop forward in search of the correct size
-            if (surfacePoints.get(surface).size() != curResult.size()) {
-                continue;
+                // since results is sorted in ascending size, can loop forward in search of the correct size
+                if (surfacePoints.get(surface).size() != curResult.size())
+                    continue;
+                
+                if (surfacePoints.get(surface).containsAll(curResult) && curResult.containsAll(surfacePoints.get(surface))) {
+                    surfaceExists = true;
+                    break;
+                }
             }
-
-            if (surfacePoints.get(surface).containsAll(curResult) && curResult.containsAll(surfacePoints.get(surface))) {
-                surfaceExists = true;
-                break;
+            if (!surfaceExists) {
+                Surface newSurface = new Surface(curResult, curResult.get(0).sub(curResult.get(1)).cross(curResult.get(0).sub(curResult.get(2))));
+                surfaces.add(newSurface);
+                
+                minimumSize = curResult.size();
+                numAddedSurfacesOfMinimumSize ++;
             }
-        }
-        if (!surfaceExists) {
-            Surface newSurface = new Surface(curResult.get(0), curResult.get(0).sub(curResult.get(1)).cross(curResult.get(0).sub(curResult.get(2))));
-            for (Point3D point : curResult) {
-                point.addSurface(newSurface);
-            }
-            surfaces.add(newSurface);
-
-            minimumSize = curResult.size();
-            numAddedSurfacesOfMinimumSize++;
         }
     }
 

@@ -17,23 +17,14 @@ import java.util.Stack;
  */
 public class test {
     public static void main(String[] args) {
-        
-//        MyVector test = new MyVector(-0.012750000000000003,-0.0085,0.007361215932167728);
-//        MyVector test2 = new MyVector(-0.012750000000000003,0.008499999999999997,0.007361215932167728);
-//        
-//        System.out.println(test.projectOntoPlane(new MyVector(0, 100, 0), MyVector.ZERO));
-//        System.out.println(test2.projectOntoPlane(new MyVector(0, 100, 0), MyVector.ZERO));
-        
-        
-        final int SCR_WIDTH = 800, SCR_HEIGHT = 800;
-        final int PPM = 100;
-        
-        Camera cam = new Camera(0.017, 60, SCR_WIDTH, SCR_HEIGHT, PPM);
-        
-        MyVector lineA = new MyVector(-10, 0, 0);
-        MyVector lineB = new MyVector(-10, 100, 2);
-        
-        System.out.println(cam.lineIsInFov(cam.getProjection(lineA), cam.getProjection(lineB), lineA, lineB));
+        ArrayList<Point3D> points = new ArrayList();
+        points.add(new Point3D(1, 1, 1));
+        points.add(new Point3D(0, -1, 2));
+        points.add(new Point3D(0.5, 3, -7));
+        Surface surface = new Surface(points, new MyVector(0, 1, 0));
+        System.out.println(surface.getList().size());
+//        for (Triangle triangle: surface.getTriangles())
+//            System.out.println("hi");
     }
     
     
