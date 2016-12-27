@@ -21,7 +21,7 @@ public class Surface {
     
     private HashSet<Triangle> triangles = null;
     
-    private static final int NUM_TRIANGLES_ALONG_SIDE = 2;
+    private static final int NUM_TRIANGLES_ALONG_SIDE = 5;
 
     public Surface(ArrayList<Point3D> points, MyVector normal) {
         this.head = points.get(0);
@@ -201,7 +201,7 @@ public class Surface {
 //        return yArray;
 //    }
 
-    private MyVector getPolygonCenter(ArrayList<MyVector> points) {
+    public static MyVector getPolygonCenter(ArrayList<MyVector> points) {
         MyVector centerPoint = new Point3D(0, 0, 0);
 
         for (MyVector point: points)

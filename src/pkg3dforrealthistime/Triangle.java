@@ -8,6 +8,8 @@ package pkg3dforrealthistime;
 import MyVector.MyVector;
 import java.awt.Color;
 import java.awt.Polygon;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  *
@@ -16,9 +18,9 @@ import java.awt.Polygon;
 public class Triangle extends Polygon {
 
     Color colour;
-    MyVector normal;
     
     private MyVector[] corners = new MyVector[3];
+    private MyVector centerPoint = null;
 
     public Triangle(MyVector v1, MyVector v2, MyVector v3) {
         super(new int[] {(int) v1.x, (int) v2.x, (int) v3.x},
@@ -28,6 +30,8 @@ public class Triangle extends Polygon {
         corners[0] = v1;
         corners[1] = v2;
         corners[2] = v3;
+        
+        this.centerPoint = Surface.getPolygonCenter(new ArrayList<MyVector>(Arrays.asList(corners)));
     }
     
     public Polygon getProjection(Camera camera) {
@@ -56,6 +60,10 @@ public class Triangle extends Polygon {
         return projectedCorners;
     }
     
+    public MyVector getCenter() {
+        return this.centerPoint;
+    }
+    
     
     public Color getColour() {
         return colour;
@@ -65,14 +73,6 @@ public class Triangle extends Polygon {
         this.colour = colour;
     }
 
-    public MyVector getNormal() {
-        return normal;
-    }
-
-    public void setNormal(MyVector normal) {
-        this.normal = normal;
-    }
-    
     @Override
     public String toString() {
         String str = "(";

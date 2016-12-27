@@ -66,7 +66,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     private Cursor invisibleCursor;
 
     boolean playerActive = false;
-    int tessellationInterval = 2;
+    
+    LightSource light;
 
     public Main() {
 
@@ -101,7 +102,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_DOWN, false);
         keys.put(KeyEvent.VK_L, false);
 
-        player = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, WIDTH, HEIGHT, PPM));
+        player = new Spectator(MyVector.X.mult(10), MyVector.ZERO, new Camera(0.017, 60, WIDTH, HEIGHT, PPM));
         player.setAccel(0.0015);
         player.setMaxVel(0.04);
         player.setLookDegrees(0.12);
@@ -112,6 +113,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 //        observer.setLookDegrees(0.12);
 
         curPlayer = player;
+        
+        light = new LightSource(new MyVector(15, 0, 0), 100, Color.YELLOW);
+        
         
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
 //            for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
@@ -138,7 +142,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         int linesDrawn = 0;
         int trianglesDrawn = 0;
         
-        g.clearRect(0, 0, (int)WIDTH, (int)HEIGHT);
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, (int)WIDTH, (int)HEIGHT);
 
 //        if (observer != null) {
 //            Camera observerCam = observer.getCamera();
@@ -217,7 +222,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     boolean inRange = false;
                     Projection[] projectedCorners = triangle.getProjectedCorners(player.getCamera());
                     for (int i = 0; i < 3; i ++) {
-                        if (player.getCamera().lineIsInFov(projectedCorners[i], projectedCorners[i == 2 ? 0 : i], triangle.getCorners()[i], triangle.getCorners()[i == 2 ? 0 : i]))
+                        if (player.getCamera().lineIsInFov(projectedCorners[i], projectedCorners[i == 2 ? 0 : i + 1], triangle.getCorners()[i], triangle.getCorners()[i == 2 ? 0 : i + 1]))
                         {
                             inRange = true;
                             break;
@@ -226,10 +231,15 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     if (inRange) {
                         Polygon projectedTriangle = triangle.getProjection(player.getCamera());
                         trianglesDrawn ++;
-                        g.setColor(Color.CYAN);
+                        g.setColor(light.getProjectedColor(triangle.getCenter(), surface.getNormal()));
                         g.fillPolygon(projectedTriangle);
                         g.setColor(Color.BLACK);
                         g.drawPolygon(projectedTriangle);
+                        
+//                        g.setColor(Color.RED);
+//                        Projection centerProj = player.lookAt(triangle.getCenter());
+//                        Projection normalProj = player.lookAt(surface.getNormal().add(triangle.getCenter()));
+//                        g.drawLine((int)(normalProj.screenCoords.x), (int)(normalProj.screenCoords.y), (int)centerProj.screenCoords.x, (int)centerProj.screenCoords.y);
                     }
                 }
                 
@@ -288,11 +298,20 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             visitedNeigbhors.add(point);
         }
 
+
+        if (light != null) {
+            Projection lightSourceProj = player.lookAt(light.getPos());
+            if (lightSourceProj.inRange) {
+                g.setColor(Color.YELLOW);
+                g.fillOval((int) lightSourceProj.screenCoords.x - OVAL_SIZE / 4, (int) lightSourceProj.screenCoords.y - OVAL_SIZE / 4, OVAL_SIZE / 2, OVAL_SIZE / 2);
+            }
+        }
+
         if (!playerActive) {
             g.setColor(Color.RED);
             g.drawRect(0, 0, (int)WIDTH - 1, (int)HEIGHT - 1);
         } else {
-            g.setColor(Color.BLACK);
+            g.setColor(Color.WHITE);
             g.drawOval((int) (WIDTH / 2 - 20), (int) (HEIGHT / 2 - 20), 40, 40);
         }
 
@@ -337,12 +356,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             case KeyEvent.VK_L:
                                 curPlayer = curPlayer == player ? observer : player;
                                 keys.put(KeyEvent.VK_L, false);
-                                break;
-                            case KeyEvent.VK_UP:
-                                tessellationInterval++;
-                                break;
-                            case KeyEvent.VK_DOWN:
-                                tessellationInterval--;
                                 break;
                         }
                     }
@@ -390,6 +403,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                 currentPlaneNormal = selected.getSurfaces().get(0).getNormal();
                             } else if (start != null && end != null) {
                                 currentPlaneNormal = newPoint.sub(end).cross(newPoint.sub(start));
+                                if (player.getCamera().getPos().sub(start).dot(currentPlaneNormal) < 0) {
+                                    currentPlaneNormal = currentPlaneNormal.mult(-1);
+                                }
                             }
                         }
                         if (validPoint) {
@@ -531,7 +547,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 }
             }
             if (!surfaceExists) {
-                Surface newSurface = new Surface(curResult, curResult.get(0).sub(curResult.get(1)).cross(curResult.get(0).sub(curResult.get(2))));
+                if (currentPlaneNormal == null) {
+                    currentPlaneNormal = curResult.get(0).sub(curResult.get(1)).cross(curResult.get(0).sub(curResult.get(2)));
+                    if (player.getCamera().getPos().sub(start).dot(currentPlaneNormal) < 0) {
+                        currentPlaneNormal = currentPlaneNormal.mult(-1);
+                    }
+                }
+                Surface newSurface = new Surface(curResult, currentPlaneNormal);
                 surfaces.add(newSurface);
                 
                 minimumSize = curResult.size();
