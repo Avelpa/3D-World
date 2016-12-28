@@ -233,8 +233,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         trianglesDrawn ++;
                         g.setColor(light.getProjectedColor(triangle.getCenter(), surface.getNormal()));
                         g.fillPolygon(projectedTriangle);
-                        g.setColor(Color.BLACK);
-                        g.drawPolygon(projectedTriangle);
+                       // g.setColor(Color.BLACK);
+                        //g.drawPolygon(projectedTriangle);
                         
 //                        g.setColor(Color.RED);
 //                        Projection centerProj = player.lookAt(triangle.getCenter());
@@ -429,6 +429,15 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         start = null;
                         end = null;
                         currentPlaneNormal = null;
+                    } else if (mouseButton == MouseEvent.BUTTON2){
+                        for (Surface surface : surfaces){
+                            System.out.println("sure");
+                            System.out.println(surface.contains(spawnVector()));
+                            if (surface.contains(cursorPoint)){
+                                System.out.println("testt");
+                                surface.setClicked(true);
+                            }
+                        }
                     }
                     mouseDown = false;
                 }
