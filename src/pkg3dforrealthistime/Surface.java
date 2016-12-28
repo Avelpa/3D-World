@@ -6,6 +6,7 @@
 package pkg3dforrealthistime;
 
 import MyVector.MyVector;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,8 +23,10 @@ public class Surface {
     private HashSet<Triangle> triangles = null;
     
     private static final int NUM_TRIANGLES_ALONG_SIDE = 5;
-
-    public Surface(ArrayList<Point3D> points, MyVector normal) {
+    
+    private final Color color;
+    
+    public Surface(ArrayList<Point3D> points, MyVector normal, Color color) {
         this.head = points.get(0);
         this.normal = normal;
         
@@ -32,6 +35,12 @@ public class Surface {
         
         this.triangles = new HashSet();
         this.generateTriangles();
+        
+        this.color = color;
+    }
+    
+    public Color getColor() {
+        return this.color;
     }
     
 //    public boolean intersects(MyVector point, MyVector start, MyVector end) {
@@ -240,7 +249,7 @@ public class Surface {
     public void generateTriangles() {
         if (!this.triangles.isEmpty())
             this.triangles.clear();
-
+        
         ArrayList<ArrayList<MyVector>> mainTriangles = getMainTriangles((ArrayList<MyVector>)(ArrayList<? extends MyVector>)this.getList());
         for (ArrayList<MyVector> mainTriangle: mainTriangles) {
             MyVector topVector = mainTriangle.get(1).sub(mainTriangle.get(0)).mult(1d / Surface.NUM_TRIANGLES_ALONG_SIDE);

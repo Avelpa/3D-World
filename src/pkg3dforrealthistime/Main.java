@@ -44,10 +44,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     static HashMap<Point3D, Projection> points = new HashMap();
     HashSet<Surface> surfaces = new HashSet();
+    HashSet<LightSource> lights = new HashSet();
 
     Spectator player = null;
     Spectator observer = null;
     Spectator curPlayer = null;
+    
+    final MyVector GRAVITY = new MyVector(0, 0, -9.81);
 
     MyVector cursorPoint = null;
     Point3D selected = null;
@@ -67,8 +70,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     boolean playerActive = false;
     
-    LightSource light;
-
     public Main() {
 
         frame = new JFrame("3D");
@@ -102,9 +103,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_DOWN, false);
         keys.put(KeyEvent.VK_L, false);
 
-        player = new Spectator(MyVector.X.mult(10), MyVector.ZERO, new Camera(0.017, 60, WIDTH, HEIGHT, PPM));
+        player = new Spectator(MyVector.Z.mult(30).add(MyVector.Y.mult(-20)).add(MyVector.X.mult(-90)), MyVector.ZERO, new Camera(0.017, 60, WIDTH, HEIGHT, PPM));
         player.setAccel(0.0015);
-        player.setMaxVel(0.04);
+        player.setMaxVel(100);
         player.setLookDegrees(0.12);
         
 //        observer = new Spectator(new MyVector(30, -20, 5), new MyVector(-60, -5, 0), new Camera(0.017, 61, WIDTH / 2, HEIGHT, PPM));
@@ -114,7 +115,16 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
         curPlayer = player;
         
-        light = new LightSource(new MyVector(15, 0, 0), 100, Color.YELLOW);
+        lights.add(new LightSource(new MyVector(0, 0, 1000), 1000000, Color.WHITE));
+        
+        ArrayList<ArrayList<Point3D>> surfaceCreationArr = new ArrayList();
+        surfaceCreationArr.add(new ArrayList());
+        surfaceCreationArr.get(0).add(new Point3D(200, -200, 0));
+        surfaceCreationArr.get(0).add(new Point3D(200, 200, 0));
+        surfaceCreationArr.get(0).add(new Point3D(-200, 200, 0));
+        surfaceCreationArr.get(0).add(new Point3D(-200, -200, 0));
+        addNewSurface(surfaces, surfaceCreationArr, false, MyVector.Z);
+//        lights.add(new LightSource(new MyVector(15, 0, 0), 100, Color.BLACK));
         
         
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
@@ -206,12 +216,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         for (Point3D point : points.keySet()) {
 
             for (Surface surface : surfaces) {
-                
                 if (drawnSurfaces.contains(surface))
                     continue;
                 drawnSurfaces.add(surface);
                 
-                g.setColor(Color.BLACK);
                 /*g.setColor(Color.CYAN);
                 if (surface.getProjList().getFirst().inRange) {
                 Polygon polygon = new Polygon(surface.getArrayX(), surface.getArrayY(), surface.getProjList().size());
@@ -231,10 +239,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     if (inRange) {
                         Polygon projectedTriangle = triangle.getProjection(player.getCamera());
                         trianglesDrawn ++;
-                        g.setColor(light.getProjectedColor(triangle.getCenter(), surface.getNormal()));
+                        g.setColor(LightSource.getProjectedColor(triangle.getCenter(), surface.getNormal(), surface.getColor(), lights));
                         g.fillPolygon(projectedTriangle);
-                        g.setColor(Color.BLACK);
-                        g.drawPolygon(projectedTriangle);
+//                        g.setColor(Color.RED);
+//                        g.drawPolygon(projectedTriangle);
                         
 //                        g.setColor(Color.RED);
 //                        Projection centerProj = player.lookAt(triangle.getCenter());
@@ -299,10 +307,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         }
 
 
-        if (light != null) {
+        for (LightSource light: lights) {
             Projection lightSourceProj = player.lookAt(light.getPos());
             if (lightSourceProj.inRange) {
-                g.setColor(Color.YELLOW);
+                g.setColor(light.getColor());
                 g.fillOval((int) lightSourceProj.screenCoords.x - OVAL_SIZE / 4, (int) lightSourceProj.screenCoords.y - OVAL_SIZE / 4, OVAL_SIZE / 2, OVAL_SIZE / 2);
             }
         }
@@ -323,14 +331,22 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         
         g.setFont(surfaceFont);
         g.drawString("triangles: " + String.valueOf(trianglesDrawn), 10, 90);
+        
+        g.setFont(surfaceFont);
+        g.drawString("position: " + curPlayer.getCamera().getPos(), 300, 30);
+        g.setFont(surfaceFont);
+        g.drawString("velocity: " + curPlayer.getVelocity(), 300, 60);
     }
 
     public void run() {
+        
+        double prevTime = 0;
+        double totaltime = 0d;
         while (true) {
 
             if (playerActive) {
 
-                curPlayer.move();
+                curPlayer.move(GRAVITY, 1d / 60);
 
                 for (Integer key : keys.keySet()) {
                     if (keys.get(key) == true) {
@@ -421,7 +437,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                 
                                 Point3D.link(start, end);
                                 if (selected != null) {
-                                    addNewSurface(surfaces, findLoops(start, end));
+                                    addNewSurface(surfaces, findLoops(start, end), true, null);
                                 }
                             }
                         }
@@ -508,7 +524,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     }
 
     // results must be sorted in terms of list size
-    public void addNewSurface(HashSet<Surface> surfaces, ArrayList<ArrayList<Point3D>> results) { 
+    public void addNewSurface(HashSet<Surface> surfaces, ArrayList<ArrayList<Point3D>> results, boolean playerMade, MyVector normal) { 
         if (results.isEmpty()) {
             return;
         }
@@ -547,17 +563,29 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 }
             }
             if (!surfaceExists) {
-                if (currentPlaneNormal == null) {
-                    currentPlaneNormal = curResult.get(0).sub(curResult.get(1)).cross(curResult.get(0).sub(curResult.get(2)));
-                    if (player.getCamera().getPos().sub(start).dot(currentPlaneNormal) < 0) {
-                        currentPlaneNormal = currentPlaneNormal.mult(-1);
+                if (playerMade) {
+                    if (currentPlaneNormal == null) {
+                        currentPlaneNormal = curResult.get(0).sub(curResult.get(1)).cross(curResult.get(0).sub(curResult.get(2)));
+                        if (player.getCamera().getPos().sub(start).dot(currentPlaneNormal) < 0) {
+                            currentPlaneNormal = currentPlaneNormal.mult(-1);
+                        }
+                    }
+                } else {
+                    currentPlaneNormal = normal;
+                    for (int j = 0; j < curResult.size(); j ++) {
+                        points.put(curResult.get(j), player.lookAt(curResult.get(j)));
+                        Point3D.link(curResult.get(j), (curResult.get(j == curResult.size() - 1 ? 0 : j + 1)));
                     }
                 }
-                Surface newSurface = new Surface(curResult, currentPlaneNormal);
+                Surface newSurface = new Surface(curResult, currentPlaneNormal, Color.GREEN);
                 surfaces.add(newSurface);
                 
                 minimumSize = curResult.size();
                 numAddedSurfacesOfMinimumSize ++;
+                
+                if (!playerMade) {
+                    currentPlaneNormal = null;
+                }
             }
         }
     }
