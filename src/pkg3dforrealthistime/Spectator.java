@@ -57,29 +57,31 @@ public class Spectator {
         this.lookDegrees = degrees;
     }
     
-    public void move() {
+    public void move(MyVector gravity, double time) {
         // decelerate the player when not actively moving
-        if (!moving) {
-            if (this.velocity.length() < this.accel) { // accel is the smallest unit of velocity
-                this.velocity = MyVector.ZERO;
-                return;
-            }
-            this.acceleration = this.velocity.unit().mult(-this.accel);
-        } else {
+//        if (!moving) {
+//            if (this.velocity.length() < this.accel) { // accel is the smallest unit of velocity
+//                this.velocity = MyVector.ZERO;
+//                return;
+//            }
+//            this.acceleration = this.velocity.unit().mult(-this.accel);
+//        } 
+//        else 
+        {
             // if moving in multiple directions at once, cap the acceleration
             if (this.acceleration.length() != this.accel) {
                 this.acceleration = this.acceleration.unit().mult(this.accel);
             }
         }
         
-        this.velocity = this.velocity.add(this.acceleration);
-        if (moving) {
-            if (velocity.length() > maxVel) {
-                velocity = velocity.unit().mult(maxVel);
-            }
+        this.acceleration = this.acceleration.add(gravity);
+        
+        this.velocity = this.velocity.add(this.acceleration.mult(time));
+        if (this.velocity.length() > this.maxVel) {
+            this.velocity = this.velocity.unit().mult(this.maxVel);
         }
         
-        this.camera.moveBy(this.velocity);
+        this.camera.moveBy(this.velocity.mult(time));
         moving = false;
         this.acceleration = MyVector.ZERO;
     }
@@ -154,6 +156,10 @@ public class Spectator {
         if (angleFromVertical > 90) {
             this.camera.rotateVertically(90 - angleFromVertical);
         }
+    }
+    
+    public MyVector getVelocity() {
+        return this.velocity;
     }
     
     public Camera getCamera() {

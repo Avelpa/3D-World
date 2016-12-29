@@ -6,6 +6,7 @@
 package pkg3dforrealthistime;
 
 import MyVector.MyVector;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,43 +16,59 @@ import java.util.HashSet;
  * @author caius
  */
 public class Surface {
-    
+
     private Point3D head = null;
     private MyVector normal = null;
     private boolean clicked;
-    
+
     private HashSet<Triangle> triangles = null;
-    
+
     private static final int NUM_TRIANGLES_ALONG_SIDE = 5;
-    
-    public Surface(ArrayList<Point3D> points, MyVector normal) {
+
+    private final Color color;
+
+    public Surface(ArrayList<Point3D> points, MyVector normal, Color color) {
         this.head = points.get(0);
         this.normal = normal;
         clicked = false;
-        
+
         for (Point3D point : points) {
             point.addSurface(this);
         }
-        
+
         this.triangles = new HashSet();
         this.generateTriangles();
+
+        this.color = color;
     }
-    
+
+    public Color getColor() {
+        return this.color;
+    }
+
+    public MyVector getHeadVectorProj() {
+        return Main.points.get(head).screenCoords;
+    }
+
+    public MyVector getHead() {
+        return this.head;
+    }
+
     public boolean intersects(MyVector point, MyVector start, MyVector end) {
         if (start.y > end.y) {
             intersects(point, end, start);
         }
-        
+
         if (point.y <= Math.min(start.y, end.y) || point.y >= Math.max(start.y, end.y) || point.x > Math.max(start.x, end.x)) {
             return false;
         }
         if (point.x < Math.min(start.x, end.x)) {
             return true;
         }
-        
+
         double slopeEnd = Math.abs((end.y - point.y) / (end.x - point.x));
         double slopeStart = Math.abs((point.y - start.y) / (point.x - start.x));
-        
+
         if (end.x < start.x) {
             if (slopeEnd < slopeStart) {
                 return false;
@@ -61,22 +78,22 @@ public class Surface {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     public boolean contains(MyVector point) {
-        ArrayList<Projection> pointList = this.getProjList();
+        ArrayList<Projection> pointList = this.getProjList(Main.points);
         pointList.add(pointList.get(0));
         int count = 0;
-        
+
         for (int i = 0; i < pointList.size() - 1; i++) {
             if (intersects(point, new Point3D(pointList.get(i).screenCoords),
                     new Point3D(pointList.get(i + 1).screenCoords))) {
                 count++;
             }
         }
-        
+
         return count % 2 != 0;
     }
 //    public ProjRectangle getBoundsProj() {
@@ -105,7 +122,7 @@ public class Surface {
 //
 //        return new ProjRectangle(xMin, yMin, (int) width, (int) height);
 //    }
-    
+
     public ArrayList<Projection> getProjList(HashMap<Point3D, Projection> pointProjPairs) {
         ArrayList<Projection> projList = new ArrayList();
         ArrayList<Point3D> list = this.getList();
@@ -114,27 +131,18 @@ public class Surface {
         }
         return projList;
     }
-    
-    public ArrayList<Projection> getProjList() {
-        ArrayList<Projection> projList = new ArrayList();
-        ArrayList<Point3D> list = this.getList();
-        for (Point3D point : list) {
-            projList.add(Main.points.get(point));
-        }
-        return projList;
-    }
-    
+
     public ArrayList<Point3D> getList() {
         ArrayList<Point3D> list = new ArrayList();
         Point3D current = this.head;
         HashSet<Point3D> visited = new HashSet();
-        
+
         list.add(current);
-        
+
         boolean loopedBack = false;
         while (!loopedBack) {
             visited.add(current);
-            
+
             loopedBack = true;
             for (Point3D point : current.getNeighbours()) {
                 if (!visited.contains(point) && point.partOfSurface(this)) {
@@ -178,7 +186,7 @@ public class Surface {
     public MyVector getNormal() {
         return this.normal;
     }
-    
+
     @Override
     public String toString() {
         String str = "";
@@ -210,150 +218,150 @@ public class Surface {
 //    }
     public static MyVector getPolygonCenter(ArrayList<MyVector> points) {
         MyVector centerPoint = new Point3D(0, 0, 0);
-        
+
         for (MyVector point : points) {
             centerPoint = centerPoint.add(point);
         }
-        
+
         centerPoint = centerPoint.mult(1d / points.size());
-        
+
         return centerPoint;
     }
-    
+
     private ArrayList<ArrayList<MyVector>> getMainTriangles(ArrayList<MyVector> points) {
         ArrayList<ArrayList<MyVector>> mainTriangles = new ArrayList();
-        
+
         if (points.size() == 3) {
             mainTriangles.add(points);
             return mainTriangles;
         }
-        
+
         MyVector centerPoint = getPolygonCenter(points);
-        
+
         points.add(points.get(0));
-        
+
         ArrayList<MyVector> newTriangle = new ArrayList();
-        
+
         for (int i = 1; i < points.size(); i++) {
             newTriangle.clear();
             newTriangle.add(points.get(i));
             newTriangle.add(points.get(i - 1));
             newTriangle.add(centerPoint);
-            
+
             mainTriangles.add(new ArrayList(newTriangle));
         }
         return mainTriangles;
     }
-    
+
     public void generateTriangles() {
         if (!this.triangles.isEmpty()) {
             this.triangles.clear();
-        }
-        
-        ArrayList<ArrayList<MyVector>> mainTriangles = getMainTriangles((ArrayList<MyVector>) (ArrayList<? extends MyVector>) this.getList());
-        for (ArrayList<MyVector> mainTriangle : mainTriangles) {
-            MyVector topVector = mainTriangle.get(1).sub(mainTriangle.get(0)).mult(1d / Surface.NUM_TRIANGLES_ALONG_SIDE);
-            MyVector bottomVector = mainTriangle.get(2).sub(mainTriangle.get(0)).mult(1d / Surface.NUM_TRIANGLES_ALONG_SIDE);
-            MyVector oppositeSide = mainTriangle.get(2).sub(mainTriangle.get(1)).mult(1d / Surface.NUM_TRIANGLES_ALONG_SIDE);
-            
-            MyVector startingVertex = mainTriangle.get(0);
 
-            // Add all upward-facing triangles
-            int numTrianglesOnCurrentLevel = Surface.NUM_TRIANGLES_ALONG_SIDE;
-            for (int i = 0; i < Surface.NUM_TRIANGLES_ALONG_SIDE; i++) {
-                MyVector rowStartingVertex = startingVertex.add(topVector.mult(i));
-                for (int j = 0; j < numTrianglesOnCurrentLevel; j++) {
-                    triangles.add(new Triangle(rowStartingVertex, rowStartingVertex.add(bottomVector), rowStartingVertex.add(topVector)));
-                    rowStartingVertex = rowStartingVertex.add(bottomVector);
+            ArrayList<ArrayList<MyVector>> mainTriangles = getMainTriangles((ArrayList<MyVector>) (ArrayList<? extends MyVector>) this.getList());
+            for (ArrayList<MyVector> mainTriangle : mainTriangles) {
+                MyVector topVector = mainTriangle.get(1).sub(mainTriangle.get(0)).mult(1d / Surface.NUM_TRIANGLES_ALONG_SIDE);
+                MyVector bottomVector = mainTriangle.get(2).sub(mainTriangle.get(0)).mult(1d / Surface.NUM_TRIANGLES_ALONG_SIDE);
+                MyVector oppositeSide = mainTriangle.get(2).sub(mainTriangle.get(1)).mult(1d / Surface.NUM_TRIANGLES_ALONG_SIDE);
+
+                MyVector startingVertex = mainTriangle.get(0);
+
+                // Add all upward-facing triangles
+                int numTrianglesOnCurrentLevel = Surface.NUM_TRIANGLES_ALONG_SIDE;
+                for (int i = 0; i < Surface.NUM_TRIANGLES_ALONG_SIDE; i++) {
+                    MyVector rowStartingVertex = startingVertex.add(topVector.mult(i));
+                    for (int j = 0; j < numTrianglesOnCurrentLevel; j++) {
+                        triangles.add(new Triangle(rowStartingVertex, rowStartingVertex.add(bottomVector), rowStartingVertex.add(topVector)));
+                        rowStartingVertex = rowStartingVertex.add(bottomVector);
+                    }
+                    numTrianglesOnCurrentLevel--;
                 }
-                numTrianglesOnCurrentLevel--;
-            }
-            // Add all downward-facing triangles
-            numTrianglesOnCurrentLevel = Surface.NUM_TRIANGLES_ALONG_SIDE - 1;
-            for (int i = 1; i <= Surface.NUM_TRIANGLES_ALONG_SIDE - 1; i++) {
-                MyVector rowStartingVertex = startingVertex.add(topVector.mult(i));
-                for (int j = 0; j < numTrianglesOnCurrentLevel; j++) {
-                    triangles.add(new Triangle(rowStartingVertex, rowStartingVertex.add(oppositeSide), rowStartingVertex.add(bottomVector)));
-                    rowStartingVertex = rowStartingVertex.add(bottomVector);
+                // Add all downward-facing triangles
+                numTrianglesOnCurrentLevel = Surface.NUM_TRIANGLES_ALONG_SIDE - 1;
+                for (int i = 1; i <= Surface.NUM_TRIANGLES_ALONG_SIDE - 1; i++) {
+                    MyVector rowStartingVertex = startingVertex.add(topVector.mult(i));
+                    for (int j = 0; j < numTrianglesOnCurrentLevel; j++) {
+                        triangles.add(new Triangle(rowStartingVertex, rowStartingVertex.add(oppositeSide), rowStartingVertex.add(bottomVector)));
+                        rowStartingVertex = rowStartingVertex.add(bottomVector);
+                    }
+                    numTrianglesOnCurrentLevel--;
                 }
-                numTrianglesOnCurrentLevel--;
             }
         }
-//        ArrayList<MyVector> surfacePoints = new ArrayList();
-
-//        for (ArrayList<Projection> mainTriangle : mainTriangles) {
-//
-//            surfacePoints.clear();
-//
-//            for (Projection proj : mainTriangle) {
-//                surfacePoints.add(proj.screenCoords);
-//            }
-//
-//            MyVector vertex = null;
-//
-//            for (MyVector point : surfacePoints) {
-//                if (vertex == null || point.y < vertex.y) {
-//                    vertex = point;
-//                }
-//            }
-//
-//            surfacePoints.remove(vertex);
-//
-//            MyVector vRight = null;
-//            MyVector vLeft = null;
-//
-//            for (MyVector point : surfacePoints) {
-//                if (vRight == null || point.x > vRight.x) {
-//                    vRight = point;
-//                } else if (vLeft == null || point.x < vLeft.x) {
-//                    vLeft = point;
-//                }
-//            }
-//
-//            MyVector xShift = (vRight.sub(vLeft)).mult((double) 1 / interval);
-//            MyVector yShift = (vLeft.sub(vertex)).mult((double) 1 / interval);
-//
-//            vRight = vertex.add((vRight.sub(vertex)).mult((double) 1 / interval));
-//            vLeft = vertex.add(yShift);
-//
-//            MyVector referenceVertex = vertex;
-//            MyVector referenceVRight = vRight;
-//            MyVector referenceVLeft = vLeft;
-//
-//            int pattern = 1;
-//
-//            for (int i = 0; i < interval; i++) {
-//                vertex = referenceVertex;
-//                vRight = referenceVRight;
-//                vLeft = referenceVLeft;
-//
-//                for (int j = 1; j <= pattern; j++) {
-//                    if ((j % 2) == 0) {
-//                        triangles.add(Triangle.makeTriangle(vertex, vertex.add(xShift), vRight));
-//                        vertex = vertex.add(xShift);
-//                        vRight = vRight.add(xShift);
-//                        vLeft = vLeft.add(xShift);
-//                    } else {
-//                        triangles.add(Triangle.makeTriangle(vertex, vRight, vLeft));
-//                    }
-//                }
-//                pattern += 2;
-//                referenceVertex = referenceVertex.add(yShift);
-//                referenceVLeft = referenceVLeft.add(yShift);
-//                referenceVRight = referenceVRight.add(yShift);
-//            }
-//        }
-//        return triangles;
     }
-    
+    //        ArrayList<MyVector> surfacePoints = new ArrayList();
+
+    //        for (ArrayList<Projection> mainTriangle : mainTriangles) {
+    //
+    //            surfacePoints.clear();
+    //
+    //            for (Projection proj : mainTriangle) {
+    //                surfacePoints.add(proj.screenCoords);
+    //            }
+    //
+    //            MyVector vertex = null;
+    //
+    //            for (MyVector point : surfacePoints) {
+    //                if (vertex == null || point.y < vertex.y) {
+    //                    vertex = point;
+    //                }
+    //            }
+    //
+    //            surfacePoints.remove(vertex);
+    //
+    //            MyVector vRight = null;
+    //            MyVector vLeft = null;
+    //
+    //            for (MyVector point : surfacePoints) {
+    //                if (vRight == null || point.x > vRight.x) {
+    //                    vRight = point;
+    //                } else if (vLeft == null || point.x < vLeft.x) {
+    //                    vLeft = point;
+    //                }
+    //            }
+    //
+    //            MyVector xShift = (vRight.sub(vLeft)).mult((double) 1 / interval);
+    //            MyVector yShift = (vLeft.sub(vertex)).mult((double) 1 / interval);
+    //
+    //            vRight = vertex.add((vRight.sub(vertex)).mult((double) 1 / interval));
+    //            vLeft = vertex.add(yShift);
+    //
+    //            MyVector referenceVertex = vertex;
+    //            MyVector referenceVRight = vRight;
+    //            MyVector referenceVLeft = vLeft;
+    //
+    //            int pattern = 1;
+    //
+    //            for (int i = 0; i < interval; i++) {
+    //                vertex = referenceVertex;
+    //                vRight = referenceVRight;
+    //                vLeft = referenceVLeft;
+    //
+    //                for (int j = 1; j <= pattern; j++) {
+    //                    if ((j % 2) == 0) {
+    //                        triangles.add(Triangle.makeTriangle(vertex, vertex.add(xShift), vRight));
+    //                        vertex = vertex.add(xShift);
+    //                        vRight = vRight.add(xShift);
+    //                        vLeft = vLeft.add(xShift);
+    //                    } else {
+    //                        triangles.add(Triangle.makeTriangle(vertex, vRight, vLeft));
+    //                    }
+    //                }
+    //                pattern += 2;
+    //                referenceVertex = referenceVertex.add(yShift);
+    //                referenceVLeft = referenceVLeft.add(yShift);
+    //                referenceVRight = referenceVRight.add(yShift);
+    //            }
+    //        }
+    //        return triangles;
+    //    }
     public HashSet<Triangle> getTriangles() {
         return this.triangles;
     }
-    
+
     public boolean isClicked() {
         return this.clicked;
     }
-    
+
     public void setClicked(boolean clicked) {
         this.clicked = clicked;
     }

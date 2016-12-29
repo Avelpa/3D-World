@@ -5,8 +5,8 @@
  */
 package pkg3dforrealthistime;
 
-import MyVector.MyMatrix;
 import MyVector.MyVector;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Stack;
@@ -21,7 +21,7 @@ public class test {
         points.add(new Point3D(1, 1, 1));
         points.add(new Point3D(0, -1, 2));
         points.add(new Point3D(0.5, 3, -7));
-        Surface surface = new Surface(points, new MyVector(0, 1, 0));
+        Surface surface = new Surface(points, new MyVector(0, 1, 0), Color.WHITE);
         System.out.println(surface.getList().size());
 //        for (Triangle triangle: surface.getTriangles())
 //            System.out.println("hi");
