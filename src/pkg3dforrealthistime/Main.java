@@ -103,12 +103,18 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_UP, false);
         keys.put(KeyEvent.VK_DOWN, false);
         keys.put(KeyEvent.VK_L, false);
+        keys.put(KeyEvent.VK_CONTROL, false);
 
-        player = new Spectator(MyVector.Z.mult(30).add(MyVector.Y.mult(-20)).add(MyVector.X.mult(-90)), MyVector.ZERO, new Camera(0.017, 60, WIDTH, HEIGHT, PPM));
-        player.setAccel(0.0015);
-        player.setMaxVel(100);
-        player.setLookDegrees(0.12);
-
+        player = new Spectator(MyVector.Z.mult(10).add(MyVector.Y.mult(30)).add(MyVector.X.mult(-20)), 
+                MyVector.ZERO, 
+                new Camera(0.017, 60, 
+                        WIDTH, HEIGHT, PPM),
+                new Point(3, 1),
+                new Point(3, 1),
+                new Point(9, 100),
+                new Point(10, 10),
+                0.12, 2
+        );
 //        observer = new Spectator(new MyVector(30, -20, 5), new MyVector(-60, -5, 0), new Camera(0.017, 61, WIDTH / 2, HEIGHT, PPM));
 //        observer.setAccel(0.0015);
 //        observer.setMaxVel(0.08);
@@ -124,8 +130,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         surfaceCreationArr.get(0).add(new Point3D(-200, 200, 0));
         surfaceCreationArr.get(0).add(new Point3D(-200, -200, 0));
         //addNewSurface(surfaces, surfaceCreationArr, false, MyVector.Z);
-//        lights.add(new LightSource(new MyVector(15, 0, 0), 100, Color.BLACK));
 
+        
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
 //            for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
 //                for (int h = -2; h <= 2; h ++) {
@@ -207,7 +213,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 //                        new int[] {(int)(left.screenCoords.y), (int)top.screenCoords.y, (int)right.screenCoords.y, (int)bottom.screenCoords.y}, 4);
 //            }
 //        }
-//        // end second camera
+        // end second camera
+
         HashSet<Point3D> visitedNeigbhors = new HashSet();
         HashSet<Surface> drawnSurfaces = new HashSet();
         Projection pointProj = null;
@@ -341,14 +348,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     }
 
     public void run() {
-
-        double prevTime = 0;
-        double totaltime = 0d;
+        
         while (true) {
 
             if (playerActive) {
 
                 curPlayer.move(GRAVITY, 1d / 60);
+                collidePlayer();
 
                 for (Integer key : keys.keySet()) {
                     if (keys.get(key) == true) {
@@ -380,6 +386,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                     extendSurface(surface, cursorPoint);
                                 }
                                 break;
+                            case KeyEvent.VK_CONTROL:
+                                curPlayer.toggleFlying();
+                                keys.put(KeyEvent.VK_CONTROL, false);
                         }
                     }
                 }
@@ -490,6 +499,14 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 Thread.sleep(1000 / 60);
             } catch (InterruptedException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    public void collidePlayer() {
+        for (Surface surface: surfaces) {
+            if (player.getCamera().getPos().sub(surface.getPoint()).dot(surface.getNormal()) < 0) {
+                player.collide(surface, player.getCamera().getPos().sub(surface.getPoint()).vectorProject(surface.getNormal()));
             }
         }
     }
@@ -615,7 +632,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         Point3D.link(curResult.get(j), (curResult.get(j == curResult.size() - 1 ? 0 : j + 1)));
                     }
                 }
-                Surface newSurface = new Surface(curResult, currentPlaneNormal, Color.GREEN);
+                Surface newSurface = new Surface(curResult, currentPlaneNormal, Color.WHITE);
                 surfaces.add(newSurface);
 
                 minimumSize = curResult.size();

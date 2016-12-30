@@ -43,6 +43,38 @@ public class Surface {
     public Color getColor() {
         return this.color;
     }
+    
+    public MyVector getPoint() {
+        return this.head;
+    }
+    
+//    public boolean intersects(MyVector point, MyVector start, MyVector end) {
+//        if (start.y > end.y) {
+//            intersects(point, end, start);
+//        }
+//
+//        if (point.y <= Math.min(start.y, end.y) || point.y >= Math.max(start.y, end.y) || point.x > Math.max(start.x, end.x)) {
+//            return false;
+//        }
+//        if (point.x < Math.min(start.x, end.x)) {
+//            return true;
+//        }
+//
+//        double slopeEnd = Math.abs((end.y - point.y) / (end.x - point.x));
+//        double slopeStart = Math.abs((point.y - start.y) / (point.x - start.x));
+//
+//        if (end.x < start.x) {
+//            if (slopeEnd < slopeStart) {
+//                return false;
+//            }
+//        } else if (end.x > start.x) {
+//            if (slopeEnd > slopeStart) {
+//                return false;
+//            }
+//        }
+//
+//        return true;
+//    }
 
     public MyVector getHeadVectorProj() {
         return Main.points.get(head).screenCoords;
