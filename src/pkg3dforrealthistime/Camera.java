@@ -74,39 +74,59 @@ public class Camera {
         MyVector relSubj = subject.sub(this.position);
         
         MyVector extendedNormal = relSubj.vectorProject(this.normal);
-        double horRange = extendedNormal.length() * Math.tan(horFovRad / 2);
-        double vertRange = extendedNormal.length() * Math.tan(vertFovRad / 2);
-        
-        ret.horHalfWidth = horRange;
-        ret.vertHalfHeight = vertRange;
-        
-        MyVector projNY = relSubj.projectOntoPlane(this.y2D, MyVector.ZERO);
-        
-        if (projNY.scalarProject(this.normal) <= 0)
+        double horRatio = 0, vertRatio = 0;
+        if (extendedNormal.equals(MyVector.ZERO)) { // if the point is on the camera's relative XY plane (and not (0, 0, 0)), extend it to the edges of the screen
+            MyVector projXY = relSubj.projectOntoPlane(this.normal, MyVector.ZERO);
+            double relX = projXY.scalarProject(this.x2D);
+            double relY = projXY.scalarProject(this.y2D);
+            
+            ret.cartesianCoords = new MyVector(SCR_WIDTH * 100 * Math.signum(relX), SCR_HEIGHT * 100 * Math.signum(relY), 0);
+            ret.screenCoords = cartesianToScreen(ret.cartesianCoords, SCR_WIDTH, SCR_HEIGHT);
+//            if (Math.abs(relX) >= Math.abs(relY)) {
+//                horRatio = Math.signum(relX);
+//                vertRatio = Math.abs(relY / relX);
+//                if (relY < 0)
+//                    vertRatio *= -1;
+//            } else {
+//                vertRatio = Math.signum(relY);
+//                horRatio = Math.abs(relX / relY);
+//                if (relX < 0)
+//                    horRatio *= -1;
+//            }
             ret.inFront = false;
-        
-        double nyAngle = MyVector.angleBetween(projNY, this.normal);
-        if (nyAngle > this.getHorizontalFov() / 2)
             ret.inRange = false;
-        
-        MyVector horVec = projNY.sub(extendedNormal);
-        double horRatio = horVec.length() / horRange;
-        double horRatioSign = Math.signum(horVec.scalarProject(this.x2D));
-        horRatio *= horRatioSign;
-        
-        MyVector projNZ = relSubj.projectOntoPlane(this.x2D, MyVector.ZERO);
-        
-        double nzAngle = MyVector.angleBetween(projNZ, this.normal);
-        if (nzAngle > this.getVerticalFov() / 2)
-            ret.inRange = false;
-        
-        MyVector vertVec = projNZ.sub(extendedNormal);
-        double vertRatio = vertVec.length() / vertRange;
-        double vertRatioSign = Math.signum(vertVec.scalarProject(this.y2D));
-        vertRatio *= vertRatioSign;
-        
-        ret.cartesianCoords = new MyVector(horRatio * SCR_WIDTH / this.PPM / 2, vertRatio * SCR_HEIGHT / this.PPM / 2, 0);
-        ret.screenCoords = cartesianToScreen(ret.cartesianCoords, SCR_WIDTH, SCR_HEIGHT);
+        } else {
+            double horRange = extendedNormal.length() * Math.tan(horFovRad / 2);
+            double vertRange = extendedNormal.length() * Math.tan(vertFovRad / 2);
+
+            MyVector projNY = relSubj.projectOntoPlane(this.y2D, MyVector.ZERO);
+
+            if (projNY.scalarProject(this.normal) <= 0)
+                ret.inFront = false;
+
+            double nyAngle = MyVector.angleBetween(projNY, this.normal);
+            if (nyAngle > this.getHorizontalFov() / 2)
+                ret.inRange = false;
+
+            MyVector horVec = projNY.sub(extendedNormal);
+            horRatio = horVec.length() / horRange;
+            double horRatioSign = Math.signum(horVec.scalarProject(this.x2D));
+            horRatio *= horRatioSign;
+
+            MyVector projNZ = relSubj.projectOntoPlane(this.x2D, MyVector.ZERO);
+
+            double nzAngle = MyVector.angleBetween(projNZ, this.normal);
+            if (nzAngle > this.getVerticalFov() / 2)
+                ret.inRange = false;
+
+            MyVector vertVec = projNZ.sub(extendedNormal);
+            vertRatio = vertVec.length() / vertRange;
+            double vertRatioSign = Math.signum(vertVec.scalarProject(this.y2D));
+            vertRatio *= vertRatioSign;
+            
+            ret.cartesianCoords = new MyVector(horRatio * SCR_WIDTH / this.PPM / 2, vertRatio * SCR_HEIGHT / this.PPM / 2, 0);
+            ret.screenCoords = cartesianToScreen(ret.cartesianCoords, SCR_WIDTH, SCR_HEIGHT);
+        }
         
         return ret;
     }
@@ -139,11 +159,13 @@ public class Camera {
         
         double rayAngle = MyVector.angleBetween(ray1Proj, ray2Proj);
         double angle = MyVector.angleBetween(lineProj, ray1Proj);
-        if (angle > rayAngle)
+        if (angle > rayAngle) {
             return false;
+        }
         angle = MyVector.angleBetween(lineProj, ray2Proj);
-        if (angle > rayAngle)
+        if (angle > rayAngle) {
             return false;
+        }
         
         // line is in ray plane
         MyVector planeNormal = ray1.cross(ray2);

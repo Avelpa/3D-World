@@ -159,6 +159,8 @@ public class Spectator {
     }
     
     public void collide(Surface surface, MyVector penetration) {
+        if (flying)
+            return;
         this.camera.moveBy(penetration.mult(-1));
         this.velocity = this.velocity.sub(this.velocity.vectorProject(surface.getNormal()).mult(2));
     }

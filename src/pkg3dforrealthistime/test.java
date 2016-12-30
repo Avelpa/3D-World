@@ -17,14 +17,27 @@ import java.util.Stack;
  */
 public class test {
     public static void main(String[] args) {
-        ArrayList<Point3D> points = new ArrayList();
-        points.add(new Point3D(1, 1, 1));
-        points.add(new Point3D(0, -1, 2));
-        points.add(new Point3D(0.5, 3, -7));
-        Surface surface = new Surface(points, new MyVector(0, 1, 0), Color.WHITE);
-        System.out.println(surface.getList().size());
-//        for (Triangle triangle: surface.getTriangles())
-//            System.out.println("hi");
+        
+//        MyVector helpMe = new MyVector(-0.012750000000000003,-0.0085,0.007361215932167728);
+//        MyVector proejcted = helpMe.projectOntoPlane(MyVector.Z, MyVector.ZERO);
+//        System.out.println(MyVector.angleBetween(proejcted, MyVector.X.mult(-1)));
+//        System.out.println(MyVector.angleBetween(new MyVector(-5, -5, -0), MyVector.X.mult(-1)));
+        
+        
+        Camera cam = new Camera(0.017, 60, 800, 800, 100);
+        cam.moveTo(0, 0, 0.2);
+        Projection what = cam.getProjection(new MyVector(-5, -5, 0));
+        System.out.println(what.cartesianCoords);
+//        cam.moveTo(0, 0, 0.2);
+//        MyVector farLeft = new MyVector(-5, -5, 0);
+//        MyVector center = new MyVector(0, 0, 0);
+//        Projection farLeftProj = cam.getProjection(farLeft);
+//        System.out.println("farLeftProj: " + farLeftProj.cartesianCoords);
+//        System.out.println(farLeftProj.inRange);
+//        Projection centerProj = cam.getProjection(center);
+//        System.out.println("centerProj: " + centerProj.cartesianCoords);
+//        System.out.println(cam.lineIsInFov(centerProj, farLeftProj, center, farLeft));
+//        System.out.println(new MyVector(-0.012750000000000003,-0.0085,0.007361215932167728).projectOntoPlane(new MyVector(-5, -5, 0), MyVector.ZERO));
     }
     
     
