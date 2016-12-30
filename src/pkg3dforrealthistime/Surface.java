@@ -43,6 +43,10 @@ public class Surface {
         return this.color;
     }
     
+    public MyVector getPoint() {
+        return this.head;
+    }
+    
 //    public boolean intersects(MyVector point, MyVector start, MyVector end) {
 //        if (start.y > end.y) {
 //            intersects(point, end, start);
