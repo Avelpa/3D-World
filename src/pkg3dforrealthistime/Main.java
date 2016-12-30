@@ -44,6 +44,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     static HashMap<Point3D, Projection> points = new HashMap();
     HashSet<Surface> surfaces = new HashSet();
+    HashSet<Surface> selectedSurfaces = new HashSet();
     HashSet<LightSource> lights = new HashSet();
 
     Spectator player = null;
@@ -122,7 +123,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         surfaceCreationArr.get(0).add(new Point3D(200, 200, 0));
         surfaceCreationArr.get(0).add(new Point3D(-200, 200, 0));
         surfaceCreationArr.get(0).add(new Point3D(-200, -200, 0));
-        addNewSurface(surfaces, surfaceCreationArr, false, MyVector.Z);
+        //addNewSurface(surfaces, surfaceCreationArr, false, MyVector.Z);
 //        lights.add(new LightSource(new MyVector(15, 0, 0), 100, Color.BLACK));
 
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
@@ -333,13 +334,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         g.setFont(surfaceFont);
         g.drawString("velocity: " + curPlayer.getVelocity(), 300, 60);
 
-        for (Surface surface : surfaces) {
-            if (surface.isClicked()) {
-                g.setColor(Color.CYAN);
-                g.drawOval((int) surface.getHeadVectorProj().x, (int) surface.getHeadVectorProj().y, 10, 10);
-            }
+        for (Surface surface : selectedSurfaces) {
+            g.setColor(Color.CYAN);
+            g.drawOval((int) surface.getHeadVectorProj().x, (int) surface.getHeadVectorProj().y, 10, 10);
         }
-
     }
 
     public void run() {
@@ -378,7 +376,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                 keys.put(KeyEvent.VK_L, false);
                                 break;
                             case KeyEvent.VK_DOWN:
-                                for (Surface surface : surfaces) {
+                                for (Surface surface : selectedSurfaces) {
                                     extendSurface(surface, cursorPoint);
                                 }
                                 break;
@@ -464,13 +462,21 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                 if (distance < smallestDistance || smallestDistance < 0) {
 
                                     if (closestSurface != null) {
-                                        closestSurface.setClicked(!closestSurface.isClicked());
+                                        if (selectedSurfaces.contains(closestSurface)) {
+                                            selectedSurfaces.remove(closestSurface);
+                                        } else {
+                                            selectedSurfaces.add(closestSurface);
+                                        }
                                     }
 
                                     smallestDistance = distance;
                                     closestSurface = surface;
-                                    closestSurface.setClicked(!closestSurface.isClicked());
 
+                                    if (selectedSurfaces.contains(closestSurface)) {
+                                        selectedSurfaces.remove(closestSurface);
+                                    } else {
+                                        selectedSurfaces.add(closestSurface);
+                                    }
                                 }
                             }
                         }
@@ -744,34 +750,32 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
         MyVector translation = endPos.sub(surface.getHead());
 
-        ArrayList<Point3D> initialPositions = (ArrayList<Point3D>) surface.getList();
+        ArrayList<Point3D> initialPositions = surface.getList();
         ArrayList<Point3D> translatedPositions = new ArrayList<>();
 
         for (Point3D point : initialPositions) {
-            Point3D translatedPoint = point.addVector(translation);
+            Point3D translatedPoint = new Point3D(point.add(translation));
             translatedPositions.add(translatedPoint);
-            points.put(translatedPoint, player.lookAt(translatedPoint));
         }
+        ArrayList<ArrayList<Point3D>> listPoints = new ArrayList<>();
+        listPoints.add(translatedPositions);
 
-        Surface extendedSurface = new Surface(translatedPositions, surface.getNormal(), surface.getColor());
-
-        surfaces.add(extendedSurface);
+        addNewSurface(surfaces, listPoints, false, surface.getNormal());
 
         initialPositions.add(initialPositions.get(0));
         translatedPositions.add(translatedPositions.get(0));
 
         for (int i = 0; i < initialPositions.size() - 1; i++) {
-            
+            listPoints.clear();
             ArrayList<Point3D> newPoints = new ArrayList<>();
             newPoints.add(initialPositions.get(i));
             newPoints.add(initialPositions.get(i + 1));
             newPoints.add(translatedPositions.get(i + 1));
             newPoints.add(translatedPositions.get(i));
+            listPoints.add(newPoints);
 
-            Surface newSurface = new Surface(newPoints, getNormal(newPoints), surface.getColor());
-            surfaces.add(newSurface);
+            addNewSurface(surfaces, listPoints, false, getNormal(newPoints));
         }
-
     }
 
     // gets the normal of an ArrayList of Points(all points must be co-planar)

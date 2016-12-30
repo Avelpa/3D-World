@@ -19,7 +19,6 @@ public class Surface {
 
     private Point3D head = null;
     private MyVector normal = null;
-    private boolean clicked;
 
     private HashSet<Triangle> triangles = null;
 
@@ -30,7 +29,6 @@ public class Surface {
     public Surface(ArrayList<Point3D> points, MyVector normal, Color color) {
         this.head = points.get(0);
         this.normal = normal;
-        clicked = false;
 
         for (Point3D point : points) {
             point.addSurface(this);
@@ -356,13 +354,5 @@ public class Surface {
     //    }
     public HashSet<Triangle> getTriangles() {
         return this.triangles;
-    }
-
-    public boolean isClicked() {
-        return this.clicked;
-    }
-
-    public void setClicked(boolean clicked) {
-        this.clicked = clicked;
     }
 }
