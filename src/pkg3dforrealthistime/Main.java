@@ -103,6 +103,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_DOWN, false);
         keys.put(KeyEvent.VK_L, false);
         keys.put(KeyEvent.VK_CONTROL, false);
+        keys.put(KeyEvent.VK_SHIFT, false);
 
         player = new Spectator(MyVector.Z.mult(10).add(MyVector.Y.mult(30)).add(MyVector.X.mult(-20)), 
                 MyVector.ZERO, 
@@ -129,7 +130,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         surfaceCreationArr.get(0).add(new Point3D(200, 200, 0));
         surfaceCreationArr.get(0).add(new Point3D(-200, 200, 0));
         surfaceCreationArr.get(0).add(new Point3D(-200, -200, 0));
-        addNewSurface(surfaces, surfaceCreationArr, false, MyVector.Z);
+//        addNewSurface(surfaces, surfaceCreationArr, false, MyVector.Z);
 
         
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
@@ -150,7 +151,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     }
 
     final int OVAL_SIZE = 40;
-    final Font surfaceFont = new Font("comic sans", 11, 20);
+    final Font surfaceFont = new Font("", 11, 20);
 
     @Override
     public void paintComponent(Graphics g) {
@@ -449,9 +450,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             }
                         }
                     } else if (mouseButton == MouseEvent.BUTTON3) {
-                        start = null;
-                        end = null;
-                        currentPlaneNormal = null;
+                        if (!keys.get(KeyEvent.VK_SHIFT)) {
+                            start = null;
+                            end = null;
+                            currentPlaneNormal = null;
+                        } else {
+                            System.out.println("hi");
+                        }
                     }
                     mouseDown = false;
                 }
