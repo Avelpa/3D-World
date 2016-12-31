@@ -130,7 +130,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         surfaceCreationArr.get(0).add(new Point3D(200, 200, 0));
         surfaceCreationArr.get(0).add(new Point3D(-200, 200, 0));
         surfaceCreationArr.get(0).add(new Point3D(-200, -200, 0));
-        addNewSurface(surfaces, surfaceCreationArr, false, MyVector.Z);
+//        addNewSurface(surfaces, surfaceCreationArr, false, MyVector.Z);
 
         
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
@@ -467,8 +467,11 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             start = null;
                             end = null;
                             currentPlaneNormal = null;
+                            selectedSurfaces.clear();
                         } else {
-                            System.out.println("hi");
+                            for (Surface surface: selectedSurfaces) {
+                                surface.flipNormal();
+                            }
                         }
                     } else if (mouseButton == MouseEvent.BUTTON2) {
                         double distance = 0;

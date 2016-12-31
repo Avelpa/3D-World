@@ -216,7 +216,10 @@ public class Surface {
     public MyVector getNormal() {
         return this.normal;
     }
-
+    public void flipNormal() {
+        this.normal = this.normal.mult(-1);
+    }
+    
     @Override
     public String toString() {
         String str = "";
