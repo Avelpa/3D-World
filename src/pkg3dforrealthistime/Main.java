@@ -106,9 +106,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_CONTROL, false);
         keys.put(KeyEvent.VK_SHIFT, false);
 
-        player = new Spectator(MyVector.Z.mult(3).add(MyVector.Y.mult(0)).add(MyVector.X.mult(-0)), 
-                MyVector.ZERO, 
-                new Camera(0.017, 60, 
+        player = new Spectator(MyVector.Z.mult(3).add(MyVector.Y.mult(0)).add(MyVector.X.mult(-0)),
+                MyVector.ZERO,
+                new Camera(0.017, 60,
                         WIDTH, HEIGHT, PPM),
                 new Point(3, 1),
                 new Point(3, 1),
@@ -130,9 +130,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         surfaceCreationArr.get(0).add(new Point3D(200, 200, 0));
         surfaceCreationArr.get(0).add(new Point3D(-200, 200, 0));
         surfaceCreationArr.get(0).add(new Point3D(-200, -200, 0));
-        addNewSurface(surfaces, surfaceCreationArr, false, MyVector.Z);
+        //addNewSurface(surfaces, surfaceCreationArr, false, MyVector.Z);
 
-        
 //        for (int i = -WIDTH / 2 / PPM; i <= WIDTH / 2 / PPM; i ++) {
 //            for (int j = -HEIGHT / 2 / PPM; j <= HEIGHT / 2 / PPM; j ++) {
 //                for (int h = -2; h <= 2; h ++) {
@@ -154,7 +153,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     final Font surfaceFont = new Font("", 11, 20);
 
     int count = 0;
-    
+
     @Override
     public void paintComponent(Graphics g) {
         int linesDrawn = 0;
@@ -217,12 +216,11 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 //            }
 //        }
         // end second camera
-
         HashSet<Point3D> visitedNeigbhors = new HashSet();
         HashSet<Surface> drawnSurfaces = new HashSet();
         Projection pointProj = null;
         for (Point3D point : points.keySet()) {
-
+            System.out.println(surfaces.size());
             for (Surface surface : surfaces) {
                 if (drawnSurfaces.contains(surface)) {
                     continue;
@@ -244,10 +242,14 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         }
                     }
                     if (inRange) {
-                        trianglesDrawn ++;
-                        
+
+                        trianglesDrawn++;
+
                         Polygon projectedTriangle = triangle.getProjection(player.getCamera());
                         g.setColor(LightSource.getProjectedColor(triangle.getCenter(), surface.getNormal(), surface.getColor(), lights));
+                        if (selectedSurfaces.contains(surface)) {
+                            g.setColor(Color.CYAN);
+                        }
                         g.fillPolygon(projectedTriangle);
 //                        g.setColor(Color.RED);
 //                        g.drawPolygon(projectedTriangle);
@@ -345,14 +347,15 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         g.setFont(surfaceFont);
         g.drawString("velocity: " + curPlayer.getVelocity(), 300, 60);
 
-        for (Surface surface : selectedSurfaces) {
-            g.setColor(Color.CYAN);
-            g.drawOval((int) surface.getHeadVectorProj().x, (int) surface.getHeadVectorProj().y, 10, 10);
-        }
+//        for (Surface surface : selectedSurfaces) {
+//            g.setColor(Color.CYAN);
+//            MyVector centerPoint = Surface.getPolygonCenter((ArrayList<MyVector>) (ArrayList<? extends MyVector>) surface.getList());
+//            g.fillOval((int) centerPoint.x, (int) centerPoint.y, 10, 10);
+//        }
     }
 
     public void run() {
-        
+
         while (true) {
 
             if (playerActive) {
@@ -475,7 +478,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         double smallestDistance = -1;
                         Surface closestSurface = null;
                         for (Surface surface : surfaces) {
-                            smallestDistance = cursorProj.screenCoords.sub(surface.getHeadVectorProj()).length();
+                            smallestDistance = cursorProj.screenCoords.sub(Surface.getPolygonCenter((ArrayList<MyVector>) (ArrayList<? extends MyVector>) surface.getList())).length();
                             if (surface.contains(cursorProj.screenCoords)) {
                                 if (distance < smallestDistance || smallestDistance < 0) {
 
@@ -511,9 +514,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             }
         }
     }
-    
+
     public void collidePlayer() {
-        for (Surface surface: surfaces) {
+        for (Surface surface : surfaces) {
             if (player.getCamera().getPos().sub(surface.getPoint()).dot(surface.getNormal()) < 0) {
                 player.collide(surface, player.getCamera().getPos().sub(surface.getPoint()).vectorProject(surface.getNormal()));
             }
@@ -774,10 +777,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     public void extendSurface(Surface surface, MyVector endPos) {
 
-        MyVector translation = endPos.sub(surface.getHead());
-
         ArrayList<Point3D> initialPositions = surface.getList();
         ArrayList<Point3D> translatedPositions = new ArrayList<>();
+
+        MyVector translation = endPos.sub(Surface.getPolygonCenter((ArrayList<MyVector>) (ArrayList<? extends MyVector>) initialPositions));
 
         for (Point3D point : initialPositions) {
             Point3D translatedPoint = new Point3D(point.add(translation));
@@ -802,6 +805,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
             addNewSurface(surfaces, listPoints, false, getNormal(newPoints));
         }
+
+        selectedSurfaces.remove(surface);
+
     }
 
     // gets the normal of an ArrayList of Points(all points must be co-planar)
