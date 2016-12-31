@@ -258,6 +258,13 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 //                        g.drawLine((int)(normalProj.screenCoords.x), (int)(normalProj.screenCoords.y), (int)centerProj.screenCoords.x, (int)centerProj.screenCoords.y);
                     }
                 }
+                if (selectedSurfaces.contains(surface)) {
+                    Projection surfaceNormal = player.lookAt(Surface.getPolygonCenter((ArrayList<MyVector>)(ArrayList<? extends MyVector>)surface.getList()).add(surface.getNormal()));
+                    Projection midpointProj = player.lookAt(Surface.getPolygonCenter((ArrayList<MyVector>)(ArrayList<? extends MyVector>)surface.getList()));
+                    
+                    g.setColor(Color.RED);
+                    g.drawLine((int) midpointProj.screenCoords.x, (int) midpointProj.screenCoords.y, (int) surfaceNormal.screenCoords.x, (int) surfaceNormal.screenCoords.y);
+                }
 
                 /*ProjRectangle box = surface.getBoundsProj();
                 int counter2 = 0;
