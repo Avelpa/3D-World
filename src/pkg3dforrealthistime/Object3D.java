@@ -12,12 +12,12 @@ import java.util.ArrayList;
  *
  * @author caius
  */
-public class MyObject {
+public class Object3D {
     
-    private ArrayList<MyVector> points = new ArrayList();
+    private ArrayList<Surface> surfaces = new ArrayList();
     
-    public MyObject (ArrayList points){
-        this.points = points;
+    public Object3D (ArrayList<Surface> surfaces){
+        this.surfaces = surfaces;
     }
     
 }

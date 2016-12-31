@@ -29,9 +29,9 @@ public class Spectator {
     private MyVector velocity = MyVector.ZERO;
     private double lookDegrees = 0.0;
     
-//    private boolean moving = false;
-    
     private boolean flying = true;
+    private boolean slowingDown = false;
+    private MyVector decceleration = MyVector.ZERO;
     
     private final MyVector ABSOLUTE_VERTICAL;
     private MyVector FORWARD = null;
@@ -85,57 +85,80 @@ public class Spectator {
 //            }
 //        }
 
-        
-
         if (!flying) {
             this.acceleration = this.acceleration.add(gravity);
         }
+        if (!slowingDown) {
+            this.velocity = this.velocity.add(this.acceleration.mult(time));
+        }
         
-        this.velocity = this.velocity.add(this.acceleration.mult(time));
-        MyVector horizontalComponent = this.velocity.projectOntoPlane(this.ABSOLUTE_VERTICAL, MyVector.ZERO);
-        MyVector verticalComponent = this.velocity.projectOntoPlane(this.FORWARD, MyVector.ZERO);
-        boolean exceededVelocity = false;
-        if (horizontalComponent.length() > this.velLimit.x) {
-            horizontalComponent = horizontalComponent.unit().mult(this.velLimit.x);
-            exceededVelocity = true;
+        MyVector horizontalVelocity = this.velocity.projectOntoPlane(this.ABSOLUTE_VERTICAL, MyVector.ZERO);
+        MyVector verticalVelocity = this.velocity.projectOntoPlane(this.FORWARD, MyVector.ZERO);
+        
+        if (!slowingDown) {
+            if (!this.decceleration.equals(MyVector.ZERO))
+                this.decceleration = MyVector.ZERO;
+            
+            boolean exceededVelocity = false;
+            if (horizontalVelocity.length() > this.velLimit.x) {
+                horizontalVelocity = horizontalVelocity.unit().mult(this.velLimit.x);
+                exceededVelocity = true;
+            }
+            if (verticalVelocity.length() > this.velLimit.y) {
+                verticalVelocity = verticalVelocity.unit().mult(this.velLimit.y);
+                exceededVelocity = true;
+            }
+            if (exceededVelocity)
+                this.velocity = verticalVelocity.add(horizontalVelocity);
+        } else {
+            
+            if (this.decceleration.equals(MyVector.ZERO)) {
+                MyVector verticalDecceleration = this.acceleration.projectOntoPlane(this.FORWARD, MyVector.ZERO);
+                MyVector horizontalDecceleration = horizontalVelocity.unit().mult(-1);
+                if (flying) {
+                    verticalDecceleration = verticalVelocity.unit().mult(-1);
+                }
+                this.decceleration = horizontalDecceleration.add(verticalDecceleration);
+            }
+            if (this.velocity.length() < 1) {
+                this.velocity = MyVector.ZERO;
+            } else {
+                this.velocity = this.velocity.add(this.decceleration.mult(time));
+            }
         }
-        if (verticalComponent.length() > this.velLimit.y) {
-            verticalComponent = verticalComponent.unit().mult(this.velLimit.y);
-            exceededVelocity = true;
-        }
-        if (exceededVelocity)
-            this.velocity = verticalComponent.add(horizontalComponent);
+        
         
         this.camera.moveBy(this.velocity.mult(time));
-//        moving = false;
         this.acceleration = MyVector.ZERO;
+        
+        slowingDown = true;
     }
     
     public void moveForward() {
 //        this.acceleration = this.acceleration.add(this.camera.getNormal().unit().mult(this.accel));
         this.acceleration = this.acceleration.add(this.FORWARD.mult(this.accelLimit.x));
-//        moving = true;
+        slowingDown = false;
     }
     public void moveBackward() {
 //        this.acceleration = this.acceleration.add(this.camera.getNormal().unit().mult(-this.accel));
         this.acceleration = this.acceleration.add(this.FORWARD.mult(-this.accelLimit.x));
-//        moving = true;
+        slowingDown = false;
     }
     public void moveLeft() {
 //        this.acceleration = this.acceleration.add(this.camera.getX2D().unit().mult(-this.accel));
         this.acceleration = this.acceleration.add(this.RIGHT.mult(-this.accelLimit.x));
-//        moving = true;
+        slowingDown = false;
     }
     public void moveRight() {
 //        this.acceleration = this.acceleration.add(this.camera.getX2D().unit().mult(this.accel));
         this.acceleration = this.acceleration.add(this.RIGHT.mult(this.accelLimit.x));
-//        moving = true;
+        slowingDown = false;
     }
     public void moveDown() {
 //        this.acceleration = this.acceleration.add(ABSOLUTE_VERTICAL.mult(-this.accel));
         if (flying)
             this.acceleration = this.acceleration.add(this.ABSOLUTE_VERTICAL.mult(-this.accelLimit.y));
-//        moving = true;
+        slowingDown = false;
     }
     public void moveUp() {
 //        this.acceleration = this.acceleration.add(ABSOLUTE_VERTICAL.mult(this.accel));
@@ -143,7 +166,7 @@ public class Spectator {
             this.acceleration = this.acceleration.add(this.ABSOLUTE_VERTICAL.mult(this.accelLimit.y));
         else
             this.velocity = this.ABSOLUTE_VERTICAL.mult(this.jumpSpeed);
-//        moving = true;
+        slowingDown = false;
     }
     
     public void toggleFlying() {
