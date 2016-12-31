@@ -44,7 +44,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     static HashMap<Point3D, Projection> points = new HashMap();
     HashSet<Surface> surfaces = new HashSet();
-    HashSet<Surface> selectedSurfaces = new HashSet();
+    Surface selectedSurface = null;
     HashSet<LightSource> lights = new HashSet();
 
     Spectator player = null;
@@ -258,7 +258,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 //                        g.drawLine((int)(normalProj.screenCoords.x), (int)(normalProj.screenCoords.y), (int)centerProj.screenCoords.x, (int)centerProj.screenCoords.y);
                     }
                 }
-                if (selectedSurfaces.contains(surface)) {
+                if (selectedSurface == surface) {
                     Projection surfaceNormal = player.lookAt(Surface.getPolygonCenter((ArrayList<MyVector>)(ArrayList<? extends MyVector>)surface.getList()).add(surface.getNormal()));
                     Projection midpointProj = player.lookAt(Surface.getPolygonCenter((ArrayList<MyVector>)(ArrayList<? extends MyVector>)surface.getList()));
                     
@@ -352,9 +352,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         g.setFont(surfaceFont);
         g.drawString("velocity: " + curPlayer.getVelocity(), 300, 60);
 
-        for (Surface surface : selectedSurfaces) {
+        if (selectedSurface != null) {
             g.setColor(Color.CYAN);
-            g.drawOval((int) surface.getHeadVectorProj().x, (int) surface.getHeadVectorProj().y, 10, 10);
+            g.drawOval((int) selectedSurface.getHeadVectorProj().x, (int) selectedSurface.getHeadVectorProj().y, 10, 10);
         }
     }
 
@@ -393,8 +393,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                                 keys.put(KeyEvent.VK_L, false);
                                 break;
                             case KeyEvent.VK_DOWN:
-                                for (Surface surface : selectedSurfaces) {
-                                    extendSurface(surface, cursorPoint);
+                                if (selectedSurface != null) {
+                                    extendSurface(selectedSurface, cursorPoint);
                                 }
                                 break;
                             case KeyEvent.VK_CONTROL:
@@ -474,40 +474,33 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             start = null;
                             end = null;
                             currentPlaneNormal = null;
-                            selectedSurfaces.clear();
+                            selectedSurface = null;
                         } else {
-                            for (Surface surface: selectedSurfaces) {
-                                surface.flipNormal();
-                            }
+                            if (selectedSurface != null)
+                                selectedSurface.flipNormal();
                         }
                     } else if (mouseButton == MouseEvent.BUTTON2) {
                         double distance = 0;
-                        double smallestDistance = -1;
+                        double smallestDistance = 0;
                         Surface closestSurface = null;
                         for (Surface surface : surfaces) {
                             smallestDistance = cursorProj.screenCoords.sub(surface.getHeadVectorProj()).length();
                             if (surface.contains(cursorProj.screenCoords)) {
                                 if (distance < smallestDistance || smallestDistance < 0) {
 
-                                    if (closestSurface != null) {
-                                        if (selectedSurfaces.contains(closestSurface)) {
-                                            selectedSurfaces.remove(closestSurface);
-                                        } else {
-                                            selectedSurfaces.add(closestSurface);
-                                        }
-                                    }
-
+//                                    if (closestSurface != null) {
+//                                        if (selectedSurfaces.contains(closestSurface)) {
+//                                            selectedSurfaces.remove(closestSurface);
+//                                        } else {
+//                                            selectedSurfaces.add(closestSurface);
+//                                        }
+//                                    }
                                     smallestDistance = distance;
                                     closestSurface = surface;
-
-                                    if (selectedSurfaces.contains(closestSurface)) {
-                                        selectedSurfaces.remove(closestSurface);
-                                    } else {
-                                        selectedSurfaces.add(closestSurface);
-                                    }
                                 }
                             }
                         }
+                        selectedSurface = closestSurface;
                     }
                     mouseDown = false;
                 }
