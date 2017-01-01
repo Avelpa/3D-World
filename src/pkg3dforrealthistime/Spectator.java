@@ -9,6 +9,7 @@ import MyVector.MyMatrix;
 import MyVector.MyVector;
 import java.awt.Point;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  *
@@ -37,6 +38,8 @@ public class Spectator {
     private MyVector FORWARD = null;
     private MyVector RIGHT = null;
     
+    HashSet<MyVector> hitbox = new HashSet();
+    
     public Spectator(MyVector position, MyVector YawPitchRoll, Camera camera, Point movingAccelLimit, Point flyingAccelLimit, Point movingVelLimit, Point flyingVelLimit, double lookDegrees, double jumpSpeed) {
         this.camera = camera;
         
@@ -57,6 +60,17 @@ public class Spectator {
         
         this.velLimit = this.flyingVelLimit;
         this.accelLimit = this.flyingAccelLimit;
+        
+        this.generateHitbox();
+    }
+    
+    private void generateHitbox() {
+        this.hitbox.add(this.RIGHT.mult(0.25));
+        this.hitbox.add(this.RIGHT.mult(-0.25));
+        this.hitbox.add(this.FORWARD.mult(0.25));
+        this.hitbox.add(this.FORWARD.mult(-0.25));
+        this.hitbox.add(this.ABSOLUTE_VERTICAL.mult(0.25));
+        this.hitbox.add(this.ABSOLUTE_VERTICAL.mult(-0.75));
     }
     
     public void lookAt(HashMap<Point3D, Projection> points) {
@@ -165,22 +179,36 @@ public class Spectator {
     }
     
     public boolean collideWithObject(Object3D object) {
-        MyVector penetration = object.getPenetration(this.camera.getPos());
-        if (penetration != null) {
-            this.collide(penetration);
+        MyVector penetration = null;
+        MyVector shortestPenetration = null;
+        MyVector shortestPenetrationHitpoint = null;
+        for (MyVector hitpoint: this.hitbox) {
+            penetration = object.getPenetration(hitpoint.add(this.camera.getPos()));
+            if (shortestPenetration == null || penetration.length() < shortestPenetration.length()) {
+                shortestPenetration = penetration;
+                shortestPenetrationHitpoint = hitpoint;
+            }
+        }
+        if (shortestPenetrationHitpoint != null) {
+            this.collide(shortestPenetration, shortestPenetrationHitpoint);
             return true;
         }
-//        System.out.println("no collision");
         return false;
     }
     
-    private void collide(MyVector penetration) {
+    private void collide(MyVector penetration, MyVector hitpoint) {
         if (flying)
             return;
         this.camera.moveBy(penetration.mult(-1));
-        System.out.println("old velocity: " + this.velocity);
-        this.velocity = this.velocity.sub(this.velocity.vectorProject(penetration.mult(-1)).mult(2));
-        System.out.println("new velocity: " + this.velocity);
+//        this.velocity = this.velocity.sub(this.velocity.vectorProject(penetration.mult(-1)).mult(2));
+//        this.velocity = this.velocity.vectorProject(penetration);
+//        if (hitpoint.equals(this.ABSOLUTE_VERTICAL.mult(-0.75))) {
+////            this.velocity = MyVector.ZERO;
+//        }
+//        else {
+//            this.velocity = this.velocity.projectOntoPlane(penetration, MyVector.ZERO);
+//        }
+        this.velocity = this.velocity.projectOntoPlane(penetration, MyVector.ZERO);
     }
     
     

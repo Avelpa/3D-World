@@ -57,7 +57,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     Spectator observer = null;
     Spectator curPlayer = null;
 
-    final MyVector GRAVITY = new MyVector(0, 0, -9.81);
+    final MyVector GRAVITY = new MyVector(0, 0, -1);
 
     MyVector cursorPoint = null;
     Point3D selected = null;
@@ -80,7 +80,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     enum ObjectType {
         NONE, CUBE
     };
-    int objectTypeIndex = 0;
+    int objectTypeIndex = 1;
 
     public Main() {
 
