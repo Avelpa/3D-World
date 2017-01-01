@@ -69,31 +69,13 @@ public class Spectator {
     }
     
     public void move(MyVector gravity, double time) {
-        // decelerate the player when not actively moving
-//        if (!moving) {
-//            if (this.velocity.length() < this.accel) { // accel is the smallest unit of velocity
-//                this.velocity = MyVector.ZERO;
-//                return;
-//            }
-//            this.acceleration = this.velocity.unit().mult(-this.accel);
-//        } 
-//        else 
-//        {
-//            // if moving in multiple directions at once, cap the acceleration
-//            if (this.acceleration.length() != this.accel) {
-//                this.acceleration = this.acceleration.unit().mult(this.accel);
-//            }
-//        }
-
         if (!flying) {
             this.acceleration = this.acceleration.add(gravity);
         }
-        if (!slowingDown) {
-            this.velocity = this.velocity.add(this.acceleration.mult(time));
-        }
+        this.velocity = this.velocity.add(this.acceleration.mult(time));
         
         MyVector horizontalVelocity = this.velocity.projectOntoPlane(this.ABSOLUTE_VERTICAL, MyVector.ZERO);
-        MyVector verticalVelocity = this.velocity.projectOntoPlane(this.FORWARD, MyVector.ZERO);
+        MyVector verticalVelocity = this.velocity.vectorProject(this.ABSOLUTE_VERTICAL);
         
         if (!slowingDown) {
             if (!this.decceleration.equals(MyVector.ZERO))
@@ -108,20 +90,21 @@ public class Spectator {
                 verticalVelocity = verticalVelocity.unit().mult(this.velLimit.y);
                 exceededVelocity = true;
             }
-            if (exceededVelocity)
+            if (exceededVelocity) {
                 this.velocity = verticalVelocity.add(horizontalVelocity);
+            }
         } else {
-            
             if (this.decceleration.equals(MyVector.ZERO)) {
-                MyVector verticalDecceleration = this.acceleration.projectOntoPlane(this.FORWARD, MyVector.ZERO);
-                MyVector horizontalDecceleration = horizontalVelocity.unit().mult(-1);
+                MyVector verticalDecceleration = MyVector.ZERO;
+                MyVector horizontalDecceleration = horizontalVelocity.mult(-1);
                 if (flying) {
-                    verticalDecceleration = verticalVelocity.unit().mult(-1);
+                    verticalDecceleration = verticalVelocity.mult(-1);
                 }
                 this.decceleration = horizontalDecceleration.add(verticalDecceleration);
             }
-            if (this.velocity.length() < 1) {
+            if (this.velocity.length() < 1e-6) {
                 this.velocity = MyVector.ZERO;
+                this.decceleration = MyVector.ZERO;
             } else {
                 this.velocity = this.velocity.add(this.decceleration.mult(time));
             }
@@ -181,11 +164,23 @@ public class Spectator {
         }
     }
     
-    public void collide(Surface surface, MyVector penetration) {
+    public boolean collideWithObject(Object3D object) {
+        MyVector penetration = object.getPenetration(this.camera.getPos());
+        if (penetration != null) {
+            this.collide(penetration);
+            return true;
+        }
+//        System.out.println("no collision");
+        return false;
+    }
+    
+    private void collide(MyVector penetration) {
         if (flying)
             return;
         this.camera.moveBy(penetration.mult(-1));
-        this.velocity = this.velocity.sub(this.velocity.vectorProject(surface.getNormal()).mult(2));
+        System.out.println("old velocity: " + this.velocity);
+        this.velocity = this.velocity.sub(this.velocity.vectorProject(penetration.mult(-1)).mult(2));
+        System.out.println("new velocity: " + this.velocity);
     }
     
     

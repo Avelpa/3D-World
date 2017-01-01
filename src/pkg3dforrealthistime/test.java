@@ -5,9 +5,9 @@
  */
 package pkg3dforrealthistime;
 
-import MyVector.MyVector;
-import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Stack;
 
@@ -18,29 +18,19 @@ import java.util.Stack;
 public class test {
     public static void main(String[] args) {
         
-//        MyVector helpMe = new MyVector(-0.012750000000000003,-0.0085,0.007361215932167728);
-//        MyVector proejcted = helpMe.projectOntoPlane(MyVector.Z, MyVector.ZERO);
-//        System.out.println(MyVector.angleBetween(proejcted, MyVector.X.mult(-1)));
-//        System.out.println(MyVector.angleBetween(new MyVector(-5, -5, -0), MyVector.X.mult(-1)));
+        ArrayList<Node> nodes = new ArrayList();
+        nodes.add(new Node('d'));
+        nodes.add(new Node('b'));
+        nodes.add(new Node('c'));
+        nodes.add(new Node('a'));
         
+        Collections.sort(nodes, 
+                        (o1, o2) -> o1.compareTo(o2));
         
-        Camera cam = new Camera(0.017, 60, 800, 800, 100);
-        cam.moveTo(0, 0, 0.2);
-        Projection what = cam.getProjection(new MyVector(-5, -5, 0));
-        System.out.println(what.cartesianCoords);
-//        cam.moveTo(0, 0, 0.2);
-//        MyVector farLeft = new MyVector(-5, -5, 0);
-//        MyVector center = new MyVector(0, 0, 0);
-//        Projection farLeftProj = cam.getProjection(farLeft);
-//        System.out.println("farLeftProj: " + farLeftProj.cartesianCoords);
-//        System.out.println(farLeftProj.inRange);
-//        Projection centerProj = cam.getProjection(center);
-//        System.out.println("centerProj: " + centerProj.cartesianCoords);
-//        System.out.println(cam.lineIsInFov(centerProj, farLeftProj, center, farLeft));
-//        System.out.println(new MyVector(-0.012750000000000003,-0.0085,0.007361215932167728).projectOntoPlane(new MyVector(-5, -5, 0), MyVector.ZERO));
+        for (Node node: nodes)
+            System.out.println(node.ID);
     }
-    
-    
+
     public test() {
         Node a = new Node('a');
         Node b = new Node('b');
@@ -160,7 +150,7 @@ public class test {
 }
 
 
-class Node {
+class Node implements Comparable{
     public HashSet<Node> neighbors;
     char ID;
     boolean visited = false;
@@ -177,5 +167,18 @@ class Node {
     public static void link(Node a, Node b) {
         a.linkTo(b);
         b.linkTo(a);
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        Node other = (Node)o;
+        return this.ID - other.ID;
+    }
+}
+
+class CustomComparator implements Comparator<Node> {
+    @Override
+    public int compare(Node o1, Node o2) {
+        return o1.compareTo(o2);
     }
 }

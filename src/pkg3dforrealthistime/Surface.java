@@ -22,7 +22,7 @@ public class Surface {
 
     private HashSet<Triangle> triangles = null;
 
-    private static final int NUM_TRIANGLES_ALONG_SIDE = 5;
+    private static final int NUM_TRIANGLES_ALONG_SIDE = 4;
 
     private final Color color;
 
@@ -260,6 +260,8 @@ public class Surface {
 
         return centerPoint;
     }
+    
+    
 
     private ArrayList<ArrayList<MyVector>> getMainTriangles(ArrayList<MyVector> points) {
         ArrayList<ArrayList<MyVector>> mainTriangles = new ArrayList();
@@ -389,4 +391,11 @@ public class Surface {
     public HashSet<Triangle> getTriangles() {
         return this.triangles;
     }
+    
+//    @Override
+//    public int compareTo(Object o) { // distance
+//        Surface other = (Surface)o;
+//        
+//        distance = curPlayer.getCamera().getPos().sub(Surface.getPolygonCenter((ArrayList<MyVector>) (ArrayList<? extends MyVector>) surface.getList())).length();
+//    }
 }
