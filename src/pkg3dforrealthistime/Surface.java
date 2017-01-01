@@ -260,8 +260,6 @@ public class Surface {
 
         return centerPoint;
     }
-    
-    
 
     private ArrayList<ArrayList<MyVector>> getMainTriangles(ArrayList<MyVector> points) {
         ArrayList<ArrayList<MyVector>> mainTriangles = new ArrayList();

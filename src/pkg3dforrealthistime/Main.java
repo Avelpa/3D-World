@@ -76,6 +76,11 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     private Cursor invisibleCursor;
 
     boolean playerActive = false;
+    boolean objectSelection = false;
+    enum ObjectType {
+        NONE, CUBE
+    };
+    int objectTypeIndex = 0;
 
     public Main() {
 
@@ -111,6 +116,9 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_L, false);
         keys.put(KeyEvent.VK_CONTROL, false);
         keys.put(KeyEvent.VK_SHIFT, false);
+        keys.put(KeyEvent.VK_LEFT, false);
+        keys.put(KeyEvent.VK_RIGHT, false);
+        keys.put(KeyEvent.VK_ENTER, false);
 
         player = new Spectator(MyVector.Z.mult(3).add(MyVector.Y.mult(0)).add(MyVector.X.mult(-0)),
                 MyVector.ZERO,
@@ -167,11 +175,28 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     final int OVAL_SIZE = 40;
     final Font surfaceFont = new Font("", 11, 20);
+    final Font objectSelectionFont = new Font("", 11, 50);
 
     int count = 0;
 
     @Override
     public void paintComponent(Graphics g) {
+        if (objectSelection) {
+            drawObjectSelection(g);
+        } else {
+            drawGame(g);
+        }
+    }
+    
+    private void drawObjectSelection(Graphics g) {
+        g.setColor(new Color(0, 0, 100));
+        g.fillRect(0, 0, WIDTH, HEIGHT);
+        
+        g.setColor(Color.ORANGE);
+        g.setFont(objectSelectionFont);
+        g.drawString(ObjectType.values()[objectTypeIndex].name(), WIDTH / 2, HEIGHT / 2);
+    }
+    private void drawGame(Graphics g) {
         int linesDrawn = 0;
         int trianglesDrawn = 0;
 
@@ -565,12 +590,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 player.lookAt(points);
 
                 selected = null;
-                double closestDist = Float.MAX_VALUE;
                 for (Point3D point : points.keySet()) {
                     if (points.get(point).inRange && point != start) {
                         double dist = points.get(point).screenCoords.sub(cursorProj.screenCoords).length();
                         if (dist <= OVAL_SIZE) {
-                            closestDist = dist;
                             selected = point;
                         }
                     }
@@ -582,54 +605,17 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             objects.addAll(potentialObjects);
                             potentialObjects.clear();
                         } else {
-                            boolean validPoint = true;
-                            Point3D newPoint = null;
-
-                            if (currentPlaneNormal != null) {
-                                if (selected == null) {
-                                    newPoint = new Point3D(MyVector.extendUntilPlane(currentPlaneNormal, start, player.getCamera().getNormal(), player.getCamera().getPos()));
-                                } else {
-                                    if (!selected.onPlane(currentPlaneNormal, start)) {
-                                        validPoint = false;
-                                    } else {
-                                        newPoint = selected;
-                                    }
-                                }
-                            } else if (validPoint) {
-                                if (selected == null) {
-                                    newPoint = new Point3D(spawnVector());
-                                } else {
-                                    newPoint = selected;
-                                }
-                                if (start == null && selected != null && !selected.getSurfaces().isEmpty()) {
-                                    currentPlaneNormal = selected.getSurfaces().get(0).getNormal();
-                                } else if (start != null && end != null) {
-                                    currentPlaneNormal = newPoint.sub(end).cross(newPoint.sub(start));
-                                    if (player.getCamera().getPos().sub(start).dot(currentPlaneNormal) < 0) {
-                                        currentPlaneNormal = currentPlaneNormal.mult(-1);
-                                    }
-                                }
+                            
+                            switch (ObjectType.values()[objectTypeIndex]) {
+                                case NONE:
+                                    spawnPoint();
+                                    break;
+                                case CUBE:
+                                    spawnCube();
+                                    break;
                             }
-
-                            if (selected == null)
-                                potentialPoints.add(newPoint);
-                            if (validPoint) {
-                                if (start == null) {
-                                    start = newPoint;
-                                    points.put(start, player.lookAt(start));
-                                } else {
-                                    if (end != null) {
-                                        start = end;
-                                    }
-                                    end = newPoint;
-                                    points.put(end, player.lookAt(end));
-
-                                    Point3D.link(start, end);
-                                    if (selected != null) {
-                                        addNewSurface(surfaces, findLoops(start, end), true, null);
-                                    }
-                                }
-                            }
+                            
+                            
                         }
                     } else if (mouseButton == MouseEvent.BUTTON3) {
                         if (!keys.get(KeyEvent.VK_SHIFT)) {
@@ -658,6 +644,42 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     }
                     mouseDown = false;
                 }
+            } else {
+                for (Integer key : keys.keySet()) {
+                    if (keys.get(key) == true) {
+                        switch (key) {
+                            case KeyEvent.VK_SPACE:
+                                objectSelection = !objectSelection;
+                                keys.put(KeyEvent.VK_SPACE, false);
+                                break;
+                        }
+                    }
+                }
+                if (objectSelection) {
+                    for (Integer key : keys.keySet()) {
+                        if (keys.get(key) == true) {
+                            switch (key) {
+                                case KeyEvent.VK_ENTER:
+                                    objectSelection = false;
+                                    break;
+                                case KeyEvent.VK_LEFT:
+                                    objectTypeIndex --;
+                                    if (objectTypeIndex < 0) {
+                                        objectTypeIndex = ObjectType.values().length - 1;
+                                    }
+                                    keys.put(KeyEvent.VK_LEFT, false);
+                                    break;
+                                case KeyEvent.VK_RIGHT:
+                                    objectTypeIndex ++;
+                                    if (objectTypeIndex >= ObjectType.values().length) {
+                                        objectTypeIndex = 0;
+                                    }
+                                    keys.put(KeyEvent.VK_RIGHT, false);
+                                    break;
+                            }
+                        }
+                    }
+                }
             }
 
             repaint();
@@ -667,6 +689,74 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+    
+    void spawnPoint() {
+        boolean validPoint = true;
+        Point3D newPoint = null;
+
+        if (currentPlaneNormal != null) {
+            if (selected == null) {
+                newPoint = new Point3D(MyVector.extendUntilPlane(currentPlaneNormal, start, player.getCamera().getNormal(), player.getCamera().getPos()));
+            } else {
+                if (!selected.onPlane(currentPlaneNormal, start)) {
+                    validPoint = false;
+                } else {
+                    newPoint = selected;
+                }
+            }
+        } else if (validPoint) {
+            if (selected == null) {
+                newPoint = new Point3D(cursorPoint);
+            } else {
+                newPoint = selected;
+            }
+            if (start == null && selected != null && !selected.getSurfaces().isEmpty()) {
+                currentPlaneNormal = selected.getSurfaces().get(0).getNormal();
+            } else if (start != null && end != null) {
+                currentPlaneNormal = newPoint.sub(end).cross(newPoint.sub(start));
+                if (player.getCamera().getPos().sub(start).dot(currentPlaneNormal) < 0) {
+                    currentPlaneNormal = currentPlaneNormal.mult(-1);
+                }
+            }
+        }
+
+        if (selected == null)
+            potentialPoints.add(newPoint);
+        if (validPoint) {
+            if (start == null) {
+                start = newPoint;
+                points.put(start, player.lookAt(start));
+            } else {
+                if (end != null) {
+                    start = end;
+                }
+                end = newPoint;
+                points.put(end, player.lookAt(end));
+
+                Point3D.link(start, end);
+                if (selected != null) {
+                    addNewSurface(surfaces, findLoops(start, end), true, null);
+                }
+            }
+        }
+    }
+    void spawnCube() {
+        ArrayList<ArrayList<Point3D>> surfaceList = new ArrayList();
+        surfaceList.add(new ArrayList());
+        
+        surfaceList.get(0).add(new Point3D(cursorPoint));
+        surfaceList.get(0).add(new Point3D(cursorPoint.sub(MyVector.X)));
+        surfaceList.get(0).add(new Point3D(cursorPoint.sub(MyVector.X).add(MyVector.Y)));
+        surfaceList.get(0).add(new Point3D(cursorPoint.add(MyVector.Y)));
+        
+        Surface top = null;
+        for (Surface surface: addNewSurface(surfaces, surfaceList, false, MyVector.Z)) {
+            top = surface;
+            break;
+        }
+        
+        objects.add(extendSurface(top, Surface.getPolygonCenter((ArrayList<MyVector>) (ArrayList<? extends MyVector>) surfaceList.get(0)).sub(MyVector.Z)));
     }
     
     public void collidePlayer() {
@@ -925,7 +1015,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
 
     @Override
     public void mouseDragged(MouseEvent e) {
-//        mouseDown = true;
         if (playerActive) {
             pan(e.getX(), e.getY());
         }
@@ -956,7 +1045,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         ArrayList<ArrayList<Point3D>> listPoints = new ArrayList<>();
         listPoints.add(translatedPositions);
 
-        objectSurfaces.addAll(addNewSurface(surfaces, listPoints, false, surface.getNormal()));
+        objectSurfaces.addAll(addNewSurface(surfaces, listPoints, false, surface.getNormal().mult(-1)));
 
         initialPositions.add(initialPositions.get(0));
         translatedPositions.add(translatedPositions.get(0));

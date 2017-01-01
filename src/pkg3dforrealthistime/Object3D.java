@@ -6,6 +6,7 @@
 package pkg3dforrealthistime;
 
 import MyVector.MyVector;
+import java.util.ArrayList;
 import java.util.HashSet;
 
 /**
@@ -18,6 +19,27 @@ public class Object3D {
     
     public Object3D (HashSet<Surface> surfaces){
         this.surfaces = surfaces;
+        
+        this.fixNormals();
+    }
+    
+    private void fixNormals() {
+        MyVector center = this.getCenter();
+        for (Surface surface: this.surfaces) {
+            if (center.sub(surface.getPoint()).scalarProject(surface.getNormal()) > 0) {
+                surface.flipNormal();
+            }
+        }
+    }
+
+    public MyVector getCenter() {
+        MyVector center = MyVector.ZERO;
+        for (Surface surface: this.surfaces) {
+            center = center.add(Surface.getPolygonCenter((ArrayList<MyVector>)(ArrayList<? extends MyVector>)surface.getList()));
+        }
+        center = center.mult(1d / this.surfaces.size());
+        
+        return center;
     }
     
     public MyVector getPenetration(MyVector point) {
