@@ -22,7 +22,7 @@ public class Surface {
 
     private HashSet<Triangle> triangles = null;
 
-    private static final int NUM_TRIANGLES_ALONG_SIDE = 1;
+    private static final int NUM_TRIANGLES_ALONG_SIDE = 2;
 
     private final Color color;
 

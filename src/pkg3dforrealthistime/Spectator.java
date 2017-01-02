@@ -38,7 +38,7 @@ public class Spectator {
     private MyVector FORWARD = null;
     private MyVector RIGHT = null;
     
-    HashSet<MyVector> hitbox = new HashSet();
+    private HashSet<MyVector> hitbox = new HashSet();
     
     public Spectator(MyVector position, MyVector YawPitchRoll, Camera camera, Point movingAccelLimit, Point flyingAccelLimit, Point movingVelLimit, Point flyingVelLimit, double lookDegrees, double jumpSpeed) {
         this.camera = camera;
@@ -108,18 +108,22 @@ public class Spectator {
                 this.velocity = verticalVelocity.add(horizontalVelocity);
             }
         } else {
-            if (this.decceleration.equals(MyVector.ZERO)) {
-                MyVector verticalDecceleration = MyVector.ZERO;
-                MyVector horizontalDecceleration = horizontalVelocity.mult(-1);
-                if (flying) {
-                    verticalDecceleration = verticalVelocity.mult(-1);
-                }
-                this.decceleration = horizontalDecceleration.add(verticalDecceleration);
-            }
-            if (this.velocity.length() < 1e-6) {
-                this.velocity = MyVector.ZERO;
+            if (!flying && horizontalVelocity.length() < 1e-6) {
+                horizontalVelocity = MyVector.ZERO;
+                this.velocity = horizontalVelocity.add(verticalVelocity);
+                this.decceleration = MyVector.ZERO;
+            } else if (flying && this.velocity.length() < 1e-6) {
+                this.velocity = MyVector.ZERO;  
                 this.decceleration = MyVector.ZERO;
             } else {
+                if (this.decceleration.equals(MyVector.ZERO)) {
+                    MyVector verticalDecceleration = MyVector.ZERO;
+                    MyVector horizontalDecceleration = horizontalVelocity.mult(-1);
+                    if (flying) {
+                        verticalDecceleration = verticalVelocity.mult(-1);
+                    }
+                    this.decceleration = horizontalDecceleration.add(verticalDecceleration);
+                }
                 this.velocity = this.velocity.add(this.decceleration.mult(time));
             }
         }
@@ -184,7 +188,7 @@ public class Spectator {
         MyVector shortestPenetrationHitpoint = null;
         for (MyVector hitpoint: this.hitbox) {
             penetration = object.getPenetration(hitpoint.add(this.camera.getPos()));
-            if (shortestPenetration == null || penetration.length() < shortestPenetration.length()) {
+            if (penetration != null && (shortestPenetration == null || penetration.length() < shortestPenetration.length())) {
                 shortestPenetration = penetration;
                 shortestPenetrationHitpoint = hitpoint;
             }
@@ -208,7 +212,9 @@ public class Spectator {
 //        else {
 //            this.velocity = this.velocity.projectOntoPlane(penetration, MyVector.ZERO);
 //        }
+//        System.out.println("init vel: " + this.velocity);
         this.velocity = this.velocity.projectOntoPlane(penetration, MyVector.ZERO);
+//        System.out.println("after vel: " + this.velocity);
     }
     
     
@@ -247,8 +253,7 @@ public class Spectator {
         return this.camera;
     }
     
-    
-    
-    
-    
+    public HashSet<MyVector> getHitbox() {
+        return this.hitbox;
+    }
 }
