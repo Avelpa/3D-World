@@ -24,7 +24,7 @@ public class Surface {
 
     private static final int NUM_TRIANGLES_ALONG_SIDE = 2;
 
-    private final Color color;
+    private Color color;
 
     public Surface(ArrayList<Point3D> points, MyVector normal, Color color) {
         this.head = points.get(0);
@@ -42,6 +42,9 @@ public class Surface {
 
     public Color getColor() {
         return this.color;
+    }
+    public void setColor(Color newColor) {
+        this.color = newColor;
     }
     
     public MyVector getPoint() {

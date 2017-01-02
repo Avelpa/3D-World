@@ -6,6 +6,7 @@
 package pkg3dforrealthistime;
 
 import MyVector.MyVector;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -17,8 +18,11 @@ public class Object3D {
     
     private HashSet<Surface> surfaces = new HashSet();
     
-    public Object3D (HashSet<Surface> surfaces){
+    public Object3D (HashSet<Surface> surfaces, Color color){
         this.surfaces = surfaces;
+        for (Surface surface: this.surfaces) {
+            surface.setColor(color);
+        }
         
         this.fixNormals();
     }

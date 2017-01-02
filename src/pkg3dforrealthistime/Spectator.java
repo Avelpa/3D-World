@@ -10,6 +10,7 @@ import MyVector.MyVector;
 import java.awt.Point;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  *
@@ -65,12 +66,23 @@ public class Spectator {
     }
     
     private void generateHitbox() {
-        this.hitbox.add(this.RIGHT.mult(0.25));
-        this.hitbox.add(this.RIGHT.mult(-0.25));
-        this.hitbox.add(this.FORWARD.mult(0.25));
-        this.hitbox.add(this.FORWARD.mult(-0.25));
-        this.hitbox.add(this.ABSOLUTE_VERTICAL.mult(0.25));
-        this.hitbox.add(this.ABSOLUTE_VERTICAL.mult(-0.75));
+//        this.hitbox.add(this.RIGHT.mult(0.25));
+//        this.hitbox.add(this.RIGHT.mult(-0.25));
+//        this.hitbox.add(this.FORWARD.mult(0.25));
+//        this.hitbox.add(this.FORWARD.mult(-0.25));
+//        this.hitbox.add(this.ABSOLUTE_VERTICAL.mult(0.25));
+//        this.hitbox.add(this.ABSOLUTE_VERTICAL.mult(-0.75));
+
+        MyVector offset = MyVector.ZERO;
+
+        this.hitbox.add(this.RIGHT.mult(0.25).add(this.FORWARD.mult(0.25)).add(this.ABSOLUTE_VERTICAL.mult(0.25)).add(offset));
+        this.hitbox.add(this.RIGHT.mult(-0.25).add(this.FORWARD.mult(0.25)).add(this.ABSOLUTE_VERTICAL.mult(0.25)).add(offset));
+        this.hitbox.add(this.RIGHT.mult(-0.25).add(this.FORWARD.mult(-0.25)).add(this.ABSOLUTE_VERTICAL.mult(0.25)).add(offset));
+        this.hitbox.add(this.RIGHT.mult(0.25).add(this.FORWARD.mult(-0.25)).add(this.ABSOLUTE_VERTICAL.mult(0.25)).add(offset));
+        this.hitbox.add(this.RIGHT.mult(0.25).add(this.FORWARD.mult(0.25)).add(this.ABSOLUTE_VERTICAL.mult(-0.5)).add(offset));
+        this.hitbox.add(this.RIGHT.mult(-0.25).add(this.FORWARD.mult(0.25)).add(this.ABSOLUTE_VERTICAL.mult(-0.5)).add(offset));
+        this.hitbox.add(this.RIGHT.mult(-0.25).add(this.FORWARD.mult(-0.25)).add(this.ABSOLUTE_VERTICAL.mult(-0.5)).add(offset));
+        this.hitbox.add(this.RIGHT.mult(0.25).add(this.FORWARD.mult(-0.25)).add(this.ABSOLUTE_VERTICAL.mult(-0.5)).add(offset));
     }
     
     public void lookAt(HashMap<Point3D, Projection> points) {
