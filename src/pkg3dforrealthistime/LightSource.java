@@ -30,11 +30,12 @@ public class LightSource {
         boolean inRange = false;
         for (LightSource light : lights) {
             MyVector ray = point.sub(light.position);
+            
             if (ray.dot(surfaceNormal) < 0 && ray.length() <= light.radius) { // the surface is within range AND the light is shining on the front of the surface
                 inRange = true;
 
                 double colorRatio = (MyVector.angleBetween(ray, surfaceNormal) - 90) / 90;
-                colorRatio *= Math.pow(1 - ray.length() / light.radius, 2);
+                colorRatio *= Math.pow(1 - ray.length() / light.radius, 1);
                 surfaceColor = LightSource.mergeColors(light.color, surfaceColor, colorRatio);
             }
         }
