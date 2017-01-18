@@ -84,6 +84,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         keys.put(KeyEvent.VK_D, false);
         keys.put(KeyEvent.VK_CAPS_LOCK, false);
         keys.put(KeyEvent.VK_SPACE, false);
+        keys.put(KeyEvent.VK_L, false);
         
         player1 = new Spectator(MyVector.X.mult(20), MyVector.ZERO, new Camera(0.017, 60, PPM));
         player1.setAccel(0.0005);
@@ -149,71 +150,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             }
         }
         
-        
-        
-        
         if (!running) {
             g.setColor(Color.RED);
             g.drawRect(0, 0, WIDTH-1, HEIGHT-1);
         }
-        
-        /* 2 CAMERA SET-UP
-        g.setColor(Color.LIGHT_GRAY);
-        g.fillRect(0, 0, WIDTH/2, HEIGHT);
-        g.setColor(Color.DARK_GRAY);
-        for (int i = 0; i < points.size(); i ++) {
-//            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM), (HEIGHT / PPM));
-            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM / 2), (HEIGHT / PPM / 2));
-            if (cameraCoords == null)
-                continue;
-            MyVector scrCoords = toScreenCoords(cameraCoords);
-            g.fillOval((int)(scrCoords.x-5) - WIDTH/4, (int)(scrCoords.y-5), 11, 11);
-        }
-        
-        g.setColor(Color.RED);
-        g.drawLine(WIDTH/2, 0, WIDTH/2, HEIGHT);
-
-        g.setColor(Color.WHITE);
-        g.fillRect(WIDTH/2, 0, WIDTH/2, HEIGHT);
-        
-        // points
-        g.setColor(Color.DARK_GRAY);
-        for (int i = 0; i < points.size(); i ++) {
-//            MyVector cameraCoords = camera.getProjection(points.get(i), (WIDTH / PPM), (HEIGHT / PPM));
-            MyVector cameraCoords = camera2.getProjection(points.get(i), (WIDTH / PPM / 2), (HEIGHT / PPM / 2));
-            if (cameraCoords == null)
-                continue;
-            MyVector scrCoords = toScreenCoords(cameraCoords);
-            g.fillOval((int)(scrCoords.x-5) + WIDTH/4, (int)(scrCoords.y-5), 11, 11);
-        }
-        
-        g.setColor(Color.MAGENTA);
-        MyVector camPos = camera2.getProjection(camera.getPos(), WIDTH / PPM / 2, HEIGHT / PPM / 2);
-        if (camPos != null) {
-            camPos = toScreenCoords(camPos);
-            g.fillOval((int)(camPos.x - 5) + WIDTH / 4, (int)(camPos.y - 5), 11, 11);
-        }
-        
-        g.setColor(Color.BLUE);
-        MyVector normPos = camera2.getProjection(camera.getNormal().mult(200).add(camera.getPos()), WIDTH / PPM / 2, HEIGHT / PPM / 2);
-        if (normPos != null) {
-            normPos = toScreenCoords(normPos);
-            g.drawLine((int)(camPos.x) + WIDTH / 4, (int)(camPos.y), (int)(normPos.x) + WIDTH / 4, (int)(normPos.y));
-        }
-        
-        g.setColor(Color.RED);
-        MyVector y2dPos = camera2.getProjection(camera.getY2D().mult(4).add(camera.getPos()), WIDTH / PPM / 2, HEIGHT / PPM / 2);
-        if (y2dPos != null) {
-            y2dPos = toScreenCoords(y2dPos);
-            g.drawLine((int)(camPos.x) + WIDTH / 4, (int)(camPos.y), (int)(y2dPos.x) + WIDTH / 4, (int)(y2dPos.y));
-        }
-        
-        g.setColor(Color.GREEN);
-        MyVector x2dPos = camera2.getProjection(camera.getX2D().mult(4).add(camera.getPos()), WIDTH / PPM / 2, HEIGHT / PPM / 2);
-        if (x2dPos != null) {
-            x2dPos = toScreenCoords(x2dPos);
-            g.drawLine((int)(camPos.x) + WIDTH / 4, (int)(camPos.y), (int)(x2dPos.x) + WIDTH / 4, (int)(x2dPos.y));
-        }*/
     }
     
     int counter = 0;
@@ -222,7 +162,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             
             if (playerActive) {
                 
-                player.move();
+                player1.move();
+                player2.move();
                 
                 if (!running) {
                     MyVector newPoint = player.getCamera().getPos().add(player.getCamera().getNormal().unit().mult(4));
@@ -263,6 +204,10 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             case KeyEvent.VK_SPACE:
                                 player.moveUp();
                                 break;
+                            case KeyEvent.VK_L:
+                                player = player == player1 ? player2 : player1;
+                                keys.put(KeyEvent.VK_L, false);
+                                break;
                         }
                     }
                 }
@@ -273,10 +218,6 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                             case KeyEvent.VK_S:
                                 running = !running;
                                 keys.put(KeyEvent.VK_S, false);
-                                break;
-                            case KeyEvent.VK_A:
-                                player = player == player1 ? player2 : player1;
-                                keys.put(KeyEvent.VK_A, false);
                                 break;
                         }
                     }
