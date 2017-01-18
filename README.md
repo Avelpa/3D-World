@@ -58,10 +58,15 @@ Key | Function
 --- | ---
 `Esc` | Toggles in-game mode
 
+#### Not in-game mode
+Key | Function
+--- | ---
+`R` | Toggles the Conway simulation
+
 #### In-game mode (i.e., you can control the player)
   Non in-game mode has a red border surrounding the screen
-#### Drawing
-Dots can only be spawned on the current target (black circle), which snaps to a 2x2x2 meter grid
+   #### Drawing
+    - Dots can only be spawned on the current target (black circle), which snaps to a 2x2x2 meter grid
 
 Key | Function
 --- | ---
