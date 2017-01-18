@@ -53,6 +53,8 @@ Note: this version uses an old version of the camera and spectator classes, givi
 
 This version has a dual-camera set-up. Switch between cameras by pressing `L` in the in-game mode.
 
+The simulation only runs in in-game mode, and can be toggled by pressing `S` in the non in-game mode.
+
 #### General
 Key | Function
 --- | ---
