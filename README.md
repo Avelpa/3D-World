@@ -63,7 +63,7 @@ Key | Function
 #### Not in-game mode
 Key | Function
 --- | ---
-`R` | Toggles the Conway simulation
+`S` | Toggles the Conway simulation
 
 #### In-game mode (i.e., you can control the player)
 
