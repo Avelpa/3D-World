@@ -78,7 +78,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     boolean playerActive = false;
     boolean objectSelection = false;
     enum ObjectType {
-        NONE, CUBE, PYRAMID
+        FREE_DRAW, CUBE, PYRAMID
     };
     int objectTypeIndex = 2;
     
@@ -481,7 +481,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 if (mouseDown) {
                     if (mouseButton == MouseEvent.BUTTON1) {
                         switch (ObjectType.values()[objectTypeIndex]) {
-                            case NONE:
+                            case FREE_DRAW:
                                 spawnPoint();
                                 break;
                             case CUBE:
@@ -884,7 +884,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     @Override
     public void keyPressed(KeyEvent e) {
 
-        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE && !objectSelection) {
             togglePlayerActive();
         }
 
