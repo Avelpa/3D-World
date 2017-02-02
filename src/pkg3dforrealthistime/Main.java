@@ -146,26 +146,26 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
         curPlayer = player;
 
 //        lights.add(new LightSource(new MyVector(10000, 10000, 10000), 100000, Color.WHITE));
-        lights.add(new LightSource(new MyVector(100, 100, 100), 800, Color.WHITE));
-        lights.add(new LightSource(new MyVector(-100, -100, 100), 800, Color.WHITE));
+        lights.add(new LightSource(new MyVector(100, 100, 100), 800, Color.YELLOW));
+        lights.add(new LightSource(new MyVector(-100, -100, 100), 800, Color.YELLOW));
 //        lights.add(new LightSource(new MyVector(0, 0, -10000), 10010, Color.LIGHT_GRAY));
 //        lights.add(new LightSource(new MyVector(0, -10000, 0), 10010, Color.LIGHT_GRAY));
 //        lights.add(new LightSource(new MyVector(0, 10000, 0), 10010, Color.LIGHT_GRAY));
 
-        ArrayList<ArrayList<Point3D>> surfaceCreationArr = new ArrayList();
-        surfaceCreationArr.add(new ArrayList());
-        surfaceCreationArr.get(0).add(new Point3D(200, -200, 0));
-        surfaceCreationArr.get(0).add(new Point3D(200, 200, 0));
-        surfaceCreationArr.get(0).add(new Point3D(-200, 200, 0));
-        surfaceCreationArr.get(0).add(new Point3D(-200, -200, 0));
-//        HashSet<Surface> added = addNewSurface(surfaces, surfaceCreationArr, false);
-        
-        spawnCube(new MyVector(100, -100, -10), new MyVector(200, 200, 10));
-        
-        spawnCube(new MyVector(100, -100, 1000), new MyVector(200, 2, 1000));
-        spawnCube(new MyVector(100, -98, 1000), new MyVector(2, 196, 1000));
-        spawnCube(new MyVector(-100, -100, 1000), new MyVector(2, 200, 1000));
-        spawnCube(new MyVector(100, 98, 1000), new MyVector(196, 2, 1000));
+//        ArrayList<ArrayList<Point3D>> surfaceCreationArr = new ArrayList();
+//        surfaceCreationArr.add(new ArrayList());
+//        surfaceCreationArr.get(0).add(new Point3D(200, -200, 0));
+//        surfaceCreationArr.get(0).add(new Point3D(200, 200, 0));
+//        surfaceCreationArr.get(0).add(new Point3D(-200, 200, 0));
+//        surfaceCreationArr.get(0).add(new Point3D(-200, -200, 0));
+////        HashSet<Surface> added = addNewSurface(surfaces, surfaceCreationArr, false);
+//        
+//        spawnCube(new MyVector(100, -100, -10), new MyVector(200, 200, 10));
+//        
+//        spawnCube(new MyVector(100, -100, 1000), new MyVector(200, 2, 1000));
+//        spawnCube(new MyVector(100, -98, 1000), new MyVector(2, 196, 1000));
+//        spawnCube(new MyVector(-100, -100, 1000), new MyVector(2, 200, 1000));
+//        spawnCube(new MyVector(100, 98, 1000), new MyVector(196, 2, 1000));
 //        Surface newS = null;
 //        for (Surface sur: added) {
 //            newS = sur;
