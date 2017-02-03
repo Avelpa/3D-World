@@ -690,13 +690,15 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
     }
 
     /*
-        Finds all loops stemming from root, in points map
+     * Finds all loops stemming from root and going through connection
+     * By all, it really is ALL (so A->B->C and A->C->B are both included -- this should be improved  
      */
     public ArrayList<ArrayList<Point3D>> findLoops(Point3D root, Point3D connection) {
 
         // loops to be returned
         ArrayList<ArrayList<Point3D>> loops = new ArrayList();
 
+        // a list of all paths traversed
         ArrayList<ArrayList<Point3D>> potentialLoops = new ArrayList();
         potentialLoops.add(new ArrayList());
         int lastPotentialLoopIndex = potentialLoops.size() - 1;
@@ -711,11 +713,12 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
             cur = stack.pop();
 
             int curIndex = potentialLoops.get(lastPotentialLoopIndex).indexOf(cur);
+            
+            // If the current node is not in the current path
             if (curIndex == -1) {
-
                 potentialLoops.get(lastPotentialLoopIndex).add(cur);
 
-                // if the current node only has one child then this is not a loop. ABANDON LOOP!!! 
+                // if the current node only has one child then this is not a loop. Abandon current path
                 if (cur.getNeighbours().size() == 1) {
                     potentialLoops.remove(lastPotentialLoopIndex);
                     lastPotentialLoopIndex--;
@@ -724,6 +727,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     // position (the last-added element is the one whose children are being re-added)
                     // needToDupe corresponds whether the loops are branching out (i.e., ABC, vs ABD -- if more than one child node is being added,
                     // needToDupe becomes true, and all successive child nodes create new branches
+                    // So in the example ABC vs ABD, adding C to the stack does nothing, but adding D in succession duplicates the path AB
                     prev = null;
                     int curProgressSize = potentialLoops.get(lastPotentialLoopIndex).size();
                     if (curProgressSize >= 2) {
@@ -733,6 +737,7 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                     for (Point3D neighbor : cur.getNeighbours()) {
                         if (prev != neighbor) {
                             if (needToDupe) {
+                                // dupe the path
                                 potentialLoops.add(new ArrayList(potentialLoops.get(lastPotentialLoopIndex)));
                                 lastPotentialLoopIndex++;
                             } else {
@@ -742,10 +747,15 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                         }
                     }
                 }
-            } else {
-                if (curIndex == 0 && potentialLoops.get(lastPotentialLoopIndex).contains(connection) && potentialLoops.get(lastPotentialLoopIndex).size() != -1) {
+            } else { // A path just intersected itself
+                
+                // If this node is the start of the current path AND the connection also exists in the current path, it is a valid loop
+                if (curIndex == 0 && potentialLoops.get(lastPotentialLoopIndex).contains(connection)) {
+                    // the loops list should be ordered in terms of smallest loops to largest loops -- this affects which surfaces end up being
+                    // created in the addNewwSurface method
                     insertIntoListbySize(loops, potentialLoops.get(lastPotentialLoopIndex));
                 }
+                // regardless of whether or not a valid loop is found, remove the current path as soon as it intersects itself
                 potentialLoops.remove(lastPotentialLoopIndex);
                 lastPotentialLoopIndex--;
             }
@@ -777,33 +787,27 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 break;
             }
 
-            // the max number of surfaces has been added (based on surface size)
-            if (numAddedSurfacesOfMinimumSize > 0 && curResult.size() > minimumSize) {
-                break;
-            }
-
             boolean surfaceExists = false;
             for (Surface surface : surfaces) {
                 if (!surfacePoints.containsKey(surface)) {
                     surfacePoints.put(surface, surface.getList());
                 }
 
-                // since results is sorted in ascending size, can loop forward in search of the correct size
-                if (surfacePoints.get(surface).size() != curResult.size()) {
-                    continue;
-                }
-
-                if (surfacePoints.get(surface).containsAll(curResult) && curResult.containsAll(surfacePoints.get(surface))) {
-                    surfaceExists = true;
-                    break;
+                // If the current loop has identical points to an existing surface, it is not valid
+                if (surfacePoints.get(surface).size() == curResult.size()) {
+                    if (surfacePoints.get(surface).containsAll(curResult) && curResult.containsAll(surfacePoints.get(surface))) {
+                        surfaceExists = true;
+                        break;
+                    }
                 }
             }
             if (!surfaceExists) {
                 
                 if (currentPlaneNormal == null) {
+                    // pick a normal that is prependicular to the new plane
                     currentPlaneNormal = curResult.get(0).sub(curResult.get(1)).cross(curResult.get(0).sub(curResult.get(2)));
                 }
-                if (!playerMade) {
+                if (!playerMade) { // if the player didn't make the surface, link all the points and store their camera projections
                     for (int j = 0; j < curResult.size(); j++) {
                         points.put(curResult.get(j), player.lookAt(curResult.get(j)));
                         Point3D.link(curResult.get(j), (curResult.get(j == curResult.size() - 1 ? 0 : j + 1)));
@@ -820,7 +824,8 @@ public class Main extends JComponent implements KeyListener, MouseListener, Mous
                 if (!playerMade) {
                     currentPlaneNormal = null;
                 }
-                
+
+                // Any added points from potentialPoints no longer meet the requirements of being "potential points"
                 for (Point3D point : curResult) {
                     if (potentialPoints.contains(point))
                         potentialPoints.remove(point);
