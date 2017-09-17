@@ -1,5 +1,13 @@
 # 3D-World
 
+## Quick Overview
+- The 3D environment (cameras, lighting, ...) is made using linear algebra (no 3D libraries)
+- World can be rendered from multiple locations (i.e., multiple cameras)
+- Player can move around and place down various polyhedrons (cubes, pyramids) or they can create their own by joining points and extending surfaces
+- Lights can be added to the environment
+- Player can collide with objects in the environment
+
+
 ### This project was initially created to make [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway's_Game_of_Life "Wikipedia") in **3D**.
 ### However, the achieved effect was underwhelming, as the spawned cells either grew/died too quickly, and when they did grow they became  a big blob that lagged out the simulation.
 ### So instead the focus of the project was turned to making a 3D **_world_** in which 3D objects and lights could be placed.
