@@ -1,5 +1,10 @@
 # 3D-World
 
+[3D world video](https://www.youtube.com/watch?v=mkxxVxicPyM&feature=youtu.be)
+
+[3D conway video](https://www.youtube.com/watch?v=VkcN8OfD-xs&feature=youtu.be)
+
+
 ## Quick Overview
 - The 3D environment (cameras, lighting, ...) is made using linear algebra (no 3D libraries)
 - World can be rendered from multiple locations (i.e., multiple cameras)
